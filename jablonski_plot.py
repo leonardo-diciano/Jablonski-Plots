@@ -2,8 +2,7 @@ import sys
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QGridLayout, QVBoxLayout, QFileDialog,QLineEdit,
     QMessageBox, QFormLayout, QHBoxLayout, QMainWindow, QAction, QMenu, QComboBox,
-    QActionGroup, QDialog, QLabel, QGroupBox, QPushButton, QSpacerItem, QSizePolicy
-)
+    QActionGroup, QDialog, QLabel, QGroupBox, QPushButton, QSpacerItem, QSizePolicy, QScrollArea)
 from PyQt5.QtGui import QFont , QKeyEvent
 from PyQt5.QtCore import Qt , QTimer, QPoint
 import pyqtgraph as pg
@@ -78,18 +77,40 @@ class MainWindow(QMainWindow):
 		right_layout.addWidget(add_process_group)
 		main_layout.addLayout(right_layout)
 
-	#	self.scroll_content = QWidget()
-	#	self.scroll_layout = QVBoxLayout(self.scroll_content)
-	#	self.scroll_layout.addStretch()
+		scroll_lists_layout = QVBoxLayout()
 
-	#	scroll_area = QScrollArea()
-	#	scroll_area.setWidgetResizable(True)
-	#	scroll_area.setWidget(self.scroll_content)
-	#	main_layout.addWidget(scroll_area, 2) 
+		scroll_group1 = QGroupBox("State Energies List")
+		scroll_group1_layout = QVBoxLayout()
+		self.states_scroll_content = QWidget()
+		self.states_scroll_layout = QVBoxLayout(self.states_scroll_content)
+		self.states_scroll_layout.addStretch()
+
+		states_scroll_area = QScrollArea()
+		states_scroll_area.setWidgetResizable(True)
+		states_scroll_area.setWidget(self.states_scroll_content)
+		scroll_group1_layout.addWidget(states_scroll_area)
+		scroll_group1.setLayout(scroll_group1_layout)
+
+		scroll_group2 = QGroupBox("Process List")
+		scroll_group2_layout = QVBoxLayout()
+		self.proc_scroll_content = QWidget()
+		self.proc_scroll_layout = QVBoxLayout(self.proc_scroll_content)
+		self.proc_scroll_layout.addStretch()
+
+		proc_scroll_area = QScrollArea()
+		proc_scroll_area.setWidgetResizable(True)
+		proc_scroll_area.setWidget(self.proc_scroll_content)
+		scroll_group2_layout.addWidget(proc_scroll_area)
+		scroll_group2.setLayout(scroll_group2_layout)
+		
+		scroll_lists_layout.addWidget(scroll_group1)
+		scroll_lists_layout.addWidget(scroll_group2)
+
+		main_layout.addLayout(scroll_lists_layout) 
 		
 		main_layout.setStretch(0, 2)
-		main_layout.setStretch(1, 2)
-	#	main_layout.setStretch(2, 1.5)
+		main_layout.setStretch(1, 1)
+		main_layout.setStretch(2, 1)
 		
 		self.setStyleSheet("""
 		    QMenuBar { font-family: Arial; font-size: 15pt; }
@@ -112,8 +133,6 @@ class MainWindow(QMainWindow):
 		    QTabBar::tab { font-family: Arial; font-size: 14pt; }
 		 """)
 		
-		self.timer = QTimer(self)
-		self.timer.start(16)
 		self.add_state_function()
 		self.add_process_function()
 		self.showMaximized()
@@ -186,15 +205,11 @@ class MainWindow(QMainWindow):
 		state_row.addWidget(name_label)
 		state_row.addWidget(remove_btn)
 	
-		count = self.states_layout.count()
-		cols = 3
-		row = count // cols
-		col = count % cols
-		self.states_layout.addWidget(container, row, col)
+		self.states_scroll_layout.insertWidget(self.states_scroll_layout.count() - 1,container)
 		self.add_process_function()
 				
 		def remove_row():
-			self.states_layout.removeWidget(container)
+			self.states_scroll_layout.removeWidget(container)
 			container.deleteLater()
 			self.states_dict.pop(input_values['Name'])
 			self.states_list.remove(input_values['Name'])
@@ -282,20 +297,19 @@ class MainWindow(QMainWindow):
 		proc_row.addWidget(name_label)
 		proc_row.addWidget(remove_btn)
 	
-		count = self.process_layout.count()
-		cols = 2
-		row = count // cols
-		col = count % cols
-		self.process_layout.addWidget(container, row, col)
+		self.proc_scroll_layout.insertWidget(self.proc_scroll_layout.count() - 1,container)
 				
 		def remove_row():
-			self.process_layout.removeWidget(container)
+			self.proc_scroll_layout.removeWidget(container)
 			container.deleteLater()
 			self.proc_list.remove((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
 
 		remove_btn.clicked.connect(remove_row)
 
 
+	def plot_states(self):
+		lines=pg.PlotDataItem()
+		self.plot_graph.addItem()	
 
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
