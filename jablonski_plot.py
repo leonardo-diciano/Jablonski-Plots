@@ -18,7 +18,7 @@ class MainWindow(QMainWindow):
 		self.states_dict={}
 		self.states_list=[]
 		self.proc_list=[]
-		
+		self.x_val={'S':[0.2,0.8],'T':[1.8,2.1]}	
 		
 		"""Set central widget and main layout"""
 		central_widget = QWidget()
@@ -28,6 +28,10 @@ class MainWindow(QMainWindow):
 
 		self.plot_graph = pg.PlotWidget(background='w')
 		main_layout.addWidget(self.plot_graph)
+		self.plot_graph.setXRange(0,3.5)
+		self.plot_graph.setYRange(-0.001,2)
+		self.plot_graph.getPlotItem().hideAxis('bottom')
+		self.plot_graph.setLabel("left",'<span style="color: black; font-size: 16px"> Energy (eV) </span>')
 		
 		"""Right layout"""
 		right_layout = QVBoxLayout()
@@ -195,7 +199,7 @@ class MainWindow(QMainWindow):
 		container = QWidget()
 		state_row = QHBoxLayout(container)
 		
-		self.states_dict.update({input_values["Name"]:input_values["Energy"]})	
+		self.states_dict.update({input_values["Name"]:float(input_values["Energy"])})	
 		self.states_list.append(input_values["Name"])
 		name_label = QLabel(f"<b>{input_values['Name']}: {input_values['Energy']} eV</b>")
 		name_label.setAlignment(Qt.AlignCenter)
@@ -207,14 +211,14 @@ class MainWindow(QMainWindow):
 	
 		self.states_scroll_layout.insertWidget(self.states_scroll_layout.count() - 1,container)
 		self.add_process_function()
-				
+		self.plot_states()			
 		def remove_row():
 			self.states_scroll_layout.removeWidget(container)
 			container.deleteLater()
 			self.states_dict.pop(input_values['Name'])
 			self.states_list.remove(input_values['Name'])
-			print(self.states_dict)
 			self.add_process_function()
+			self.plot_states()
 
 		remove_btn.clicked.connect(remove_row)
 
@@ -308,8 +312,22 @@ class MainWindow(QMainWindow):
 
 
 	def plot_states(self):
-		lines=pg.PlotDataItem()
-		self.plot_graph.addItem()	
+		self.plot_graph.clear()
+		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
+		self.plot_graph.setXRange(0,3.5)
+		
+		if self.states_dict and all(v is not None for v in self.states_dict.values()):		
+			self.plot_graph.setYRange(-0.001,max(2,max(self.states_dict.values())+0.25))
+		else:
+			self.plot_graph.setYRange(-0.001,2)
+		for i in self.states_list:
+			if i.startswith("T"):
+				line=self.x_val["T"]
+			else:
+				line=self.x_val["S"]
+			energy=[float(self.states_dict[i]),float(self.states_dict[i])]
+			self.plot_graph.plot(line,energy,pen=pen)
+		
 
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
