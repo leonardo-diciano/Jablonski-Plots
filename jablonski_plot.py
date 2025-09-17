@@ -31,7 +31,9 @@ class MainWindow(QMainWindow):
 		self.plot_graph.setXRange(0,3.5)
 		self.plot_graph.setYRange(-0.001,2)
 		self.plot_graph.getPlotItem().hideAxis('bottom')
-		self.plot_graph.setLabel("left",'<span style="color: black; font-size: 16px"> Energy (eV) </span>')
+		self.plot_graph.setLabel("left",'<span style="color: black; font-size: 24px"> Energy (eV) </span>')
+		self.plot_graph.getPlotItem().setMouseEnabled(x=False,y=False)		
+		self.plot_graph.getPlotItem()	
 		
 		"""Right layout"""
 		right_layout = QVBoxLayout()
@@ -313,9 +315,11 @@ class MainWindow(QMainWindow):
 
 	def plot_states(self):
 		self.plot_graph.clear()
+		font = QFont()
+		font.setPointSize(32)
 		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
 		self.plot_graph.setXRange(0,3.5)
-		
+
 		if self.states_dict and all(v is not None for v in self.states_dict.values()):		
 			self.plot_graph.setYRange(-0.001,max(2,max(self.states_dict.values())+0.25))
 		else:
@@ -327,7 +331,41 @@ class MainWindow(QMainWindow):
 				line=self.x_val["S"]
 			energy=[float(self.states_dict[i]),float(self.states_dict[i])]
 			self.plot_graph.plot(line,energy,pen=pen)
+			text=pg.TextItem(html=f"<span style='font-size:16pt; color:blue;'>{i[0]}<sub>{i[1]}</sub></span>",anchor=(0.5, 0.5))
+			self.plot_graph.addItem(text)
+			text.setPos(line[0]-0.12,energy[0])
+			text.setFont(font)
 		
+	def plot_process(self,i):
+		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
+		if i[0] = 'ABS':
+		
+		elif i[0] = 'FLU': 
+
+		elif i[0] = 'PHO': 
+
+		elif i[0] = 'IC': 
+
+		elif i[0] = 'ISC': 
+
+		elif i[0] = 'RISC': 
+
+		else:
+			pass
+	
+
+	def draw_wiggly_curved():
+		return
+
+	def draw_wiggly():
+		return
+
+	def draw_straight_arrow():
+		return
+
+	def draw_dashed_arrow():
+		return
+
 
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
