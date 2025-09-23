@@ -6,6 +6,7 @@ from PyQt5.QtWidgets import (
 from PyQt5.QtGui import QFont , QKeyEvent
 from PyQt5.QtCore import Qt , QTimer, QPoint
 import pyqtgraph as pg
+import numpy as np
 
 
 class MainWindow(QMainWindow):
@@ -18,7 +19,10 @@ class MainWindow(QMainWindow):
 		self.states_dict={}
 		self.states_list=[]
 		self.proc_list=[]
-		self.x_val={'S':[0.2,0.8],'T':[1.8,2.1]}	
+		self.proc_ISC_list=[]
+		self.sing_proc=[]
+		self.label_list=[]
+		self.x_val={'S':[0.2,1.2],'T':[2.2,2.8]}	
 		
 		"""Set central widget and main layout"""
 		central_widget = QWidget()
@@ -28,7 +32,7 @@ class MainWindow(QMainWindow):
 
 		self.plot_graph = pg.PlotWidget(background='w')
 		main_layout.addWidget(self.plot_graph)
-		self.plot_graph.setXRange(0,3.5)
+		self.plot_graph.setXRange(0,3.1)
 		self.plot_graph.setYRange(-0.001,2)
 		self.plot_graph.getPlotItem().hideAxis('bottom')
 		self.plot_graph.setLabel("left",'<span style="color: black; font-size: 24px"> Energy (eV) </span>')
@@ -168,7 +172,7 @@ class MainWindow(QMainWindow):
 		new_state_row = QHBoxLayout()
 		name_label = QLabel(f"State Name")
 		name_edit = QLineEdit()
-		name_edit.setText(f"Name")
+		name_edit.setText(f"S0")
 		new_state_row.addWidget(name_label)
 		new_state_row.addWidget(name_edit)
 		name_container = QWidget()
@@ -179,7 +183,7 @@ class MainWindow(QMainWindow):
 		"""Energy"""
 		energy_label = QLabel("Energy (eV)")
 		energy_edit = QLineEdit()
-		energy_edit.setText(f"Energy")
+		energy_edit.setText(f"0")
 		new_state_row.addWidget(energy_label)
 		new_state_row.addWidget(energy_edit)
 		energy_container = QWidget()
@@ -236,7 +240,7 @@ class MainWindow(QMainWindow):
 		new_process_row = QVBoxLayout()
 		name_label = QLabel(f"Name")
 		name_edit = QComboBox()
-		name_edit.addItems(['ABS','FLU','PHO','ISC','RISC','IC'])
+		name_edit.addItems(['FLU','IC','PHO','ISC','RISC'])
 		new_process_row.addWidget(name_label)
 		new_process_row.addWidget(name_edit)
 		name_container = QWidget()
@@ -291,7 +295,7 @@ class MainWindow(QMainWindow):
 		}
 		container = QWidget()
 		proc_row = QHBoxLayout(container)
-		
+			
 		self.proc_list.append((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))	
 		name_label = QLabel(f"k<sup>{proc_input_values['Name']}</sup>"
 				f"<sub>{proc_input_values['State1']}→{proc_input_values['State2']}</sub>"
@@ -302,20 +306,33 @@ class MainWindow(QMainWindow):
 		remove_btn.setStyleSheet("font-size: 15px;")
 		proc_row.addWidget(name_label)
 		proc_row.addWidget(remove_btn)
+		
+		if proc_input_values["Name"] == 'ISC' or proc_input_values["Name"] == 'RISC':
+			 self.proc_ISC_list.append((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
+		else:
+			 self.sing_proc.append((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
 	
 		self.proc_scroll_layout.insertWidget(self.proc_scroll_layout.count() - 1,container)
-				
+		self.plot_states()
+		self.plot_process()		
+
 		def remove_row():
 			self.proc_scroll_layout.removeWidget(container)
 			container.deleteLater()
 			self.proc_list.remove((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
+			if proc_input_values["Name"] == 'ISC' or proc_input_values["Name"] == 'RISC': 
+				self.proc_ISC_list.remove((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
+			else:
+				self.sing_proc.remove((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
+			self.plot_states()
+			self.plot_process()
 
 		remove_btn.clicked.connect(remove_row)
 
 
 	def plot_states(self):
 		self.plot_graph.clear()
-		font = QFont()
+		font = QFont() 
 		font.setPointSize(32)
 		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
 		self.plot_graph.setXRange(0,3.5)
@@ -333,38 +350,130 @@ class MainWindow(QMainWindow):
 			self.plot_graph.plot(line,energy,pen=pen)
 			text=pg.TextItem(html=f"<span style='font-size:16pt; color:blue;'>{i[0]}<sub>{i[1]}</sub></span>",anchor=(0.5, 0.5))
 			self.plot_graph.addItem(text)
-			text.setPos(line[0]-0.12,energy[0])
+			if i.startswith("T"):
+				text.setPos(line[1]+0.12,energy[0])
+			else:
+				text.setPos(line[0]-0.12,energy[0])
 			text.setFont(font)
 		
-	def plot_process(self,i):
+	def plot_process(self):
 		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
-		if i[0] = 'ABS':
-		
-		elif i[0] = 'FLU': 
+		points=np.linspace(self.x_val["S"][0],self.x_val["S"][1]-0.4,len(self.sing_proc))
+		sing_ISC_points=np.linspace(self.x_val["S"][0]+0.4,self.x_val["S"][1],len(self.proc_ISC_list))
+		trip_ISC_points=np.linspace(self.x_val["T"][0],self.x_val["T"][1]-0.15,len(self.proc_ISC_list))
 
-		elif i[0] = 'PHO': 
+		for j,i in enumerate(self.sing_proc):
+		#	if i[0] == 'ABS':
+		#		self.draw_dashed_arrow(points[j],self.states_dict[i[1]],self.states_dict[i[2]] )
+			if i[0] == 'FLU': 
+				self.draw_straight_arrow(points[j],self.states_dict[i[1]],self.states_dict[i[2]],i)
+			elif i[0] == 'IC': 
+				self.draw_wiggly(points[j],self.states_dict[i[1]],self.states_dict[i[2]],i)
+			else:
+				pass
 
-		elif i[0] = 'IC': 
-
-		elif i[0] = 'ISC': 
-
-		elif i[0] = 'RISC': 
-
-		else:
-			pass
+		for j,i in enumerate(self.proc_ISC_list):
+			if i[0] == 'ISC': 
+				self.draw_wiggly_curved(sing_ISC_points[j],self.states_dict[i[1]],trip_ISC_points[j],self.states_dict[i[2]])
+			elif i[0] == 'RISC': 
+				self.draw_wiggly_curved(trip_ISC_points[j],self.states_dict[i[1]],sing_ISC_points[j],self.states_dict[i[2]])
+			elif i[0] == 'PHO': 
+				self.draw_straight_arrow(points[j],y_start,dy)
+			else:
+				pass
 	
 
-	def draw_wiggly_curved():
+	def draw_wiggly_curved(self,x_start,y_start,x_end,y_end):
+		dy=y_end - y_start
+		dx=x_end - x_start
+		t=np.linspace(0,1,300)
+		length=np.hypot(dx,dy)
+		nx=-dy/length
+		ny=dx/length
+		if dy < 0 and dx < 0:
+			wiggle=0.015*np.sin(2*np.pi*10*t)+(0.5*t**2)*(1-t)
+		elif dy > 0 and dx > 0:
+			wiggle=0.015*np.sin(2*np.pi*10*t)+(0.5*t**2)*(1-t)
+		elif dy < 0 and dx > 0:
+			wiggle=0.015*np.sin(2*np.pi*10*t)-(0.5*t**2)*(1-t)
+		elif dy > 0 and dx < 0:
+			wiggle=0.015*np.sin(2*np.pi*10*t)-(0.5*t**2)*(1-t)
+		angle = np.arctan2(dy, dx)
+		cos_a = np.cos(angle)
+		sin_a = np.sin(angle)
+		x_rot = cos_a * length * t - sin_a * wiggle
+		y_rot = sin_a * length * t + cos_a * wiggle
+		x_wiggle = x_start + x_rot
+		y_wiggle = y_start + y_rot   
+		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
+		self.plot_graph.plot(x_wiggle,y_wiggle,pen=pen)
+		if dy < 0 and dx < 0:
+			self.plot_graph.plot([x_end-0.02,x_end,x_end+0.02],[y_end-0.02,y_end,y_end-0.02],pen=pen)
+		elif dy > 0 and dx > 0:
+			self.plot_graph.plot([x_end-0.02,x_end,x_end+0.02],[y_end+0.02,y_end,y_end-+0.02],pen=pen)
+		elif dy < 0 and dx > 0:
+			self.plot_graph.plot([x_end-0.02,x_end,x_end+0.02],[y_end-0.02,y_end,y_end-0.02],pen=pen)
+		elif dy > 0 and dx < 0:
+			self.plot_graph.plot([x_end-0.02,x_end,x_end+0.02],[y_end+0.02,y_end,y_end+0.02],pen=pen)
 		return
 
-	def draw_wiggly():
+	def draw_wiggly(self,x,y_start,y_end,proc_input_values):
+		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
+		dy=y_end - y_start
+		y=np.linspace(y_start,y_end+0.02,200)
+		x_wiggle=x+0.03*np.sin(2*np.pi*10*(y-y_start)/dy)
+		self.plot_graph.plot(x_wiggle,y,pen=pen)
+		if y_end-y_start > 0 :
+			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end-0.02,y_end,y_end-0.02],pen=pen)
+		else:
+			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end+0.02,y_end,y_end+0.02],pen=pen)
+		font = QFont()
+		font.setPointSize(24)
+		text=pg.TextItem(html=f"<span style='font-size:16pt; color:blue;'>k<sup>{proc_input_values[0]}</sup>"
+                                f"<sub>{proc_input_values[1]}→{proc_input_values[2]}</sub>"
+                                f" = {proc_input_values[3]}",anchor=(0.5, 0.8),ensureInBounds=True)
+		self.plot_graph.addItem(text)
+		text.setPos(x,self.gen_label_y(y_start,y_end))
+		text.setFont(font)
 		return
 
-	def draw_straight_arrow():
+	def draw_straight_arrow(self,x,y_start,y_end,proc_input_values):
+		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
+		self.plot_graph.plot([x,x],[y_start,y_end],pen=pen)
+		if y_end-y_start > 0 :
+			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end-0.02,y_end,y_end-0.02],pen=pen)
+		else:
+			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end+0.02,y_end,y_end+0.02],pen=pen)
+
+		font = QFont()
+		font.setPointSize(24)
+		text=pg.TextItem(html=f"<span style='font-size:16pt; color:blue;'>k<sup>{proc_input_values[0]}</sup>"
+                                f"<sub>{proc_input_values[1]}→{proc_input_values[2]}</sub>"
+                                f" = {proc_input_values[3]}",anchor=(0.5, 0.8),ensureInBounds=True)
+		self.plot_graph.addItem(text)
+		text.setPos(x,self.gen_label_y(y_start,y_end))
+		text.setFont(font)
 		return
 
-	def draw_dashed_arrow():
+	def draw_dashed_arrow(self,x,y_start,y_end):
+		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.DashLine)
+		self.plot_graph.plot([x,x],[y_start,y_end],pen=pen)
+		if y_end-y_start > 0 :
+			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end-0.02,y_end,y_end-0.02],pen=pen)
+		else:
+			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end+0.02,y_end,y_end+0.02],pen=pen)
 		return
+
+	def gen_label_y(self,y_start,y_end):
+		check=True
+		while check :
+			sample_y=y_end + 0.025 + np.random.rand()*(y_start-y_end-0.05)
+			error_flag=any(abs(elem - sample_y) <= 0.05 for elem in self.label_list)
+			if not error_flag:
+				check = False
+
+		self.label_list.append(sample_y)
+		return sample_y
 
 
 if __name__ == "__main__":
