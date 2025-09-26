@@ -357,6 +357,8 @@ class MainWindow(QMainWindow):
 			text.setFont(font)
 		
 	def plot_process(self):
+		self.label_list=[]
+		all_lbl=[]
 		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
 		points=np.linspace(self.x_val["S"][0],self.x_val["S"][1]-0.4,len(self.sing_proc))
 		sing_ISC_points=np.linspace(self.x_val["S"][0]+0.4,self.x_val["S"][1],len(self.proc_ISC_list))
@@ -366,21 +368,29 @@ class MainWindow(QMainWindow):
 		#	if i[0] == 'ABS':
 		#		self.draw_dashed_arrow(points[j],self.states_dict[i[1]],self.states_dict[i[2]] )
 			if i[0] == 'FLU': 
-				self.draw_straight_arrow(points[j],self.states_dict[i[1]],self.states_dict[i[2]],i)
+				self.draw_straight_arrow(points[j],self.states_dict[i[1]],self.states_dict[i[2]])	
+				all_lbl.append((points[j],i))
 			elif i[0] == 'IC': 
-				self.draw_wiggly(points[j],self.states_dict[i[1]],self.states_dict[i[2]],i)
+				self.draw_wiggly(points[j],self.states_dict[i[1]],self.states_dict[i[2]])
+				all_lbl.append((points[j],i))
 			else:
 				pass
 
 		for j,i in enumerate(self.proc_ISC_list):
 			if i[0] == 'ISC': 
 				self.draw_wiggly_curved(sing_ISC_points[j],self.states_dict[i[1]],trip_ISC_points[j],self.states_dict[i[2]])
+				dx=trip_ISC_points[j] - sing_ISC_points[j] 
+				all_lbl.append((sing_ISC_points[j] + dx/2,i))
 			elif i[0] == 'RISC': 
 				self.draw_wiggly_curved(trip_ISC_points[j],self.states_dict[i[1]],sing_ISC_points[j],self.states_dict[i[2]])
+				dx=trip_ISC_points[j] - sing_ISC_points[j] 
+				all_lbl.append((sing_ISC_points[j] + dx/2,i))
 			elif i[0] == 'PHO': 
-				self.draw_straight_arrow(points[j],y_start,dy)
+				self.draw_straight_arrow(trip_ISC_points[j],self.states_dict[i[1]],self.states_dict[i[2]])
+				all_lbl.append((points[j],i))
 			else:
 				pass
+		self.plot_label(all_lbl)
 	
 
 	def draw_wiggly_curved(self,x_start,y_start,x_end,y_end):
@@ -417,7 +427,7 @@ class MainWindow(QMainWindow):
 			self.plot_graph.plot([x_end-0.02,x_end,x_end+0.02],[y_end+0.02,y_end,y_end+0.02],pen=pen)
 		return
 
-	def draw_wiggly(self,x,y_start,y_end,proc_input_values):
+	def draw_wiggly(self,x,y_start,y_end):
 		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
 		dy=y_end - y_start
 		y=np.linspace(y_start,y_end+0.02,200)
@@ -427,32 +437,15 @@ class MainWindow(QMainWindow):
 			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end-0.02,y_end,y_end-0.02],pen=pen)
 		else:
 			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end+0.02,y_end,y_end+0.02],pen=pen)
-		font = QFont()
-		font.setPointSize(24)
-		text=pg.TextItem(html=f"<span style='font-size:16pt; color:blue;'>k<sup>{proc_input_values[0]}</sup>"
-                                f"<sub>{proc_input_values[1]}→{proc_input_values[2]}</sub>"
-                                f" = {proc_input_values[3]}",anchor=(0.5, 0.8),ensureInBounds=True)
-		self.plot_graph.addItem(text)
-		text.setPos(x,self.gen_label_y(y_start,y_end))
-		text.setFont(font)
 		return
 
-	def draw_straight_arrow(self,x,y_start,y_end,proc_input_values):
+	def draw_straight_arrow(self,x,y_start,y_end):
 		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
 		self.plot_graph.plot([x,x],[y_start,y_end],pen=pen)
 		if y_end-y_start > 0 :
 			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end-0.02,y_end,y_end-0.02],pen=pen)
 		else:
 			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end+0.02,y_end,y_end+0.02],pen=pen)
-
-		font = QFont()
-		font.setPointSize(24)
-		text=pg.TextItem(html=f"<span style='font-size:16pt; color:blue;'>k<sup>{proc_input_values[0]}</sup>"
-                                f"<sub>{proc_input_values[1]}→{proc_input_values[2]}</sub>"
-                                f" = {proc_input_values[3]}",anchor=(0.5, 0.8),ensureInBounds=True)
-		self.plot_graph.addItem(text)
-		text.setPos(x,self.gen_label_y(y_start,y_end))
-		text.setFont(font)
 		return
 
 	def draw_dashed_arrow(self,x,y_start,y_end):
@@ -464,11 +457,26 @@ class MainWindow(QMainWindow):
 			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end+0.02,y_end,y_end+0.02],pen=pen)
 		return
 
+	def plot_label(self,all_lbl):
+		font = QFont()
+		font.setPointSize(24)
+		for i in all_lbl:
+			text=pg.TextItem(html=f"<span style='font-size:16pt; color:blue;background-color:white; padding:2px'>k<sup>{i[1][0]}</sup>"
+                                f"<sub>{i[1][1]}→{i[1][2]}</sub>"
+                                f" = {i[1][3]}",anchor=(0.4, 0.5))
+			self.plot_graph.addItem(text)
+			if i[1][0] == 'ISC' or i[1][0] == 'RISC':
+				text.setPos(i[0],(self.states_dict[i[1][1]]+self.states_dict[i[1][2]])/2+np.random.rand()*(self.states_dict[i[1][2]]-self.states_dict[i[1][1]]))
+			else:
+				text.setPos(i[0],self.gen_label_y(self.states_dict[i[1][1]],self.states_dict[i[1][2]]))
+			text.setFont(font)
+		return
+
 	def gen_label_y(self,y_start,y_end):
 		check=True
 		while check :
-			sample_y=y_end + 0.025 + np.random.rand()*(y_start-y_end-0.05)
-			error_flag=any(abs(elem - sample_y) <= 0.05 for elem in self.label_list)
+			sample_y=y_end + 0.05 + np.random.rand()*(y_start-y_end-0.1)
+			error_flag=any(abs(elem - sample_y) <= 0.08 for elem in self.label_list)
 			if not error_flag:
 				check = False
 
