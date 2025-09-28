@@ -2,17 +2,18 @@ import sys
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QGridLayout, QVBoxLayout, QFileDialog,QLineEdit,
     QMessageBox, QFormLayout, QHBoxLayout, QMainWindow, QAction, QMenu, QComboBox,
-    QActionGroup, QDialog, QLabel, QGroupBox, QPushButton, QSpacerItem, QSizePolicy, QScrollArea)
-from PyQt5.QtGui import QFont , QKeyEvent
+    QActionGroup, QDialog, QLabel, QGroupBox, QPushButton, QSpacerItem, QSizePolicy, QScrollArea, QColorDialog)
+from PyQt5.QtGui import QFont , QKeyEvent, QIcon
 from PyQt5.QtCore import Qt , QTimer, QPoint
 import pyqtgraph as pg
+import pyqtgraph.exporters
 import numpy as np
 
 
 class MainWindow(QMainWindow):
 	def __init__(self):
 		super().__init__()
-		self.setWindowTitle('Jablonski plotter')
+		self.setWindowTitle('Jablonski Plots')
 		self.setGeometry(100, 100, 800, 600)
 	
 		""" Initial conditions """
@@ -23,19 +24,23 @@ class MainWindow(QMainWindow):
 		self.sing_proc=[]
 		self.label_list=[]
 		self.x_val={'S':[0.2,1.2],'T':[2.2,2.8]}	
+		self.states_color={}
 		
 		"""Set central widget and main layout"""
 		central_widget = QWidget()
 		main_layout = QHBoxLayout(central_widget)
 		self.setCentralWidget(central_widget)
-		self.create_menu(main_layout)
 
 		self.plot_graph = pg.PlotWidget(background='w')
 		main_layout.addWidget(self.plot_graph)
 		self.plot_graph.setXRange(0,3.1)
-		self.plot_graph.setYRange(-0.001,2)
+		self.plot_graph.setYRange(-0.001,1.5)
 		self.plot_graph.getPlotItem().hideAxis('bottom')
 		self.plot_graph.setLabel("left",'<span style="color: black; font-size: 24px"> Energy (eV) </span>')
+		self.plot_graph.getAxis("left").setPen(pg.mkPen(color='black',width=5))
+		self.plot_graph.getAxis("left").setTickFont(QFont().setPointSize(14))
+		self.plot_graph.getAxis("left").setTextPen(pg.mkPen(color='black'))
+		self.plot_graph.getAxis("left").setTickSpacing(major=0.2,minor=0.2)
 		self.plot_graph.getPlotItem().setMouseEnabled(x=False,y=False)		
 		self.plot_graph.getPlotItem()	
 		
@@ -85,6 +90,23 @@ class MainWindow(QMainWindow):
 		add_process_layout.addItem(spacer)
 		
 		right_layout.addWidget(add_process_group)
+
+
+		buttons_group = QGroupBox()
+		buttons_layout=QVBoxLayout()
+	
+		self.save_button = QPushButton("Save as Image")
+		self.save_button.clicked.connect(self.save_figure)
+		buttons_layout.addWidget(self.save_button)
+	
+		self.reload_button = QPushButton("Plot Again")
+		self.reload_button.clicked.connect(self.plot_again)	
+		buttons_layout.addWidget(self.reload_button)
+
+		buttons_group.setLayout(buttons_layout)	
+		
+		right_layout.addWidget(buttons_group)
+
 		main_layout.addLayout(right_layout)
 
 		scroll_lists_layout = QVBoxLayout()
@@ -147,19 +169,6 @@ class MainWindow(QMainWindow):
 		self.add_process_function()
 		self.showMaximized()
 	
-	def create_menu(self, layout):
-		menubar = self.menuBar()
-		file_menu = menubar.addMenu("File")	
-		upload_action = QAction("Clear All", self)
-		upload_action.triggered.connect(self.upload_file)
-		file_menu.addAction(upload_action)
-		
-		download_menu = QMenu("Export image", self)
-		file_menu.addMenu(download_menu)
-	
-	
-	# --- Placeholder methods ---
-	def upload_file(self): print("Upload File clicked")
 	
 	def add_state_function(self):
 		for i in reversed(range(self.input_layout.count())):
@@ -170,9 +179,10 @@ class MainWindow(QMainWindow):
 	
 		"""State Name"""
 		new_state_row = QHBoxLayout()
-		name_label = QLabel(f"State Name")
+		name_label = QLabel(f"Name")
 		name_edit = QLineEdit()
 		name_edit.setText(f"S0")
+		name_edit.setFixedSize(30, 25)
 		new_state_row.addWidget(name_label)
 		new_state_row.addWidget(name_edit)
 		name_container = QWidget()
@@ -184,12 +194,27 @@ class MainWindow(QMainWindow):
 		energy_label = QLabel("Energy (eV)")
 		energy_edit = QLineEdit()
 		energy_edit.setText(f"0")
+		energy_edit.setFixedSize(50, 25)
 		new_state_row.addWidget(energy_label)
 		new_state_row.addWidget(energy_edit)
 		energy_container = QWidget()
 		energy_container.setLayout(new_state_row)
 		self.input_layout.addWidget(energy_container)
 		self.input_fields["Energy"] = energy_edit
+
+		"""Color"""
+		color_label = QLabel(f"Color")
+		self.color_button = QPushButton()
+		self.color_button.setStyleSheet("background-color: black;")
+		self.color_button.color_value = "#000000"
+		self.color_button.setFixedSize(30, 30) 
+		self.color_button.clicked.connect(self.choose_color)
+		new_state_row.addWidget(color_label)
+		new_state_row.addWidget(self.color_button)
+		color_container= QWidget()
+		color_container.setLayout(new_state_row)
+		self.input_layout.addWidget(color_container)
+		self.input_fields["Color"] = self.color_button 
 		
 		save_btn = QPushButton("Save")
 		save_btn.clicked.connect(self.save_input_states)
@@ -199,9 +224,14 @@ class MainWindow(QMainWindow):
 	
 	def save_input_states(self):
 		"""Save input data and create the row for states"""
-		input_values = {
-		    key: field.text() for key, field in self.input_fields.items()
-		}
+		input_values = {}
+		for  key,field in self.input_fields.items(): 
+			if isinstance(field,QLineEdit):
+				input_values[key] = field.text() 
+			elif isinstance(field, QPushButton) and hasattr(field, "color_value"):
+				input_values[key] = field.color_value
+			else:
+				 input_values[key] = None
 		container = QWidget()
 		state_row = QHBoxLayout(container)
 		
@@ -214,7 +244,8 @@ class MainWindow(QMainWindow):
 		remove_btn.setStyleSheet("font-size: 15px;")
 		state_row.addWidget(name_label)
 		state_row.addWidget(remove_btn)
-	
+		self.states_color.update({input_values["Name"]:input_values["Color"]})
+			
 		self.states_scroll_layout.insertWidget(self.states_scroll_layout.count() - 1,container)
 		self.add_process_function()
 		self.plot_states()			
@@ -223,6 +254,7 @@ class MainWindow(QMainWindow):
 			container.deleteLater()
 			self.states_dict.pop(input_values['Name'])
 			self.states_list.remove(input_values['Name'])
+			self.states_color.pop(input_values['Name'])
 			self.add_process_function()
 			self.plot_states()
 
@@ -329,71 +361,71 @@ class MainWindow(QMainWindow):
 
 		remove_btn.clicked.connect(remove_row)
 
+	def choose_color(self):
+		color = QColorDialog.getColor()
+		if color.isValid():
+			self.color_button.setStyleSheet(f"background-color: {color.name()};")
+			self.color_button.color_value = color.name()
 
 	def plot_states(self):
 		self.plot_graph.clear()
-		font = QFont() 
-		font.setPointSize(32)
-		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
 		self.plot_graph.setXRange(0,3.5)
 
 		if self.states_dict and all(v is not None for v in self.states_dict.values()):		
-			self.plot_graph.setYRange(-0.001,max(2,max(self.states_dict.values())+0.25))
+			self.plot_graph.setYRange(-0.001,max(1.5,max(self.states_dict.values())+0.25))
 		else:
-			self.plot_graph.setYRange(-0.001,2)
+			self.plot_graph.setYRange(-0.001,1.5)
 		for i in self.states_list:
 			if i.startswith("T"):
 				line=self.x_val["T"]
 			else:
 				line=self.x_val["S"]
+			pen = pg.mkPen(color=self.states_color[i], width=5, style=Qt.SolidLine)
 			energy=[float(self.states_dict[i]),float(self.states_dict[i])]
 			self.plot_graph.plot(line,energy,pen=pen)
-			text=pg.TextItem(html=f"<span style='font-size:16pt; color:blue;'>{i[0]}<sub>{i[1]}</sub></span>",anchor=(0.5, 0.5))
+			text=pg.TextItem(html=f"<span style='font-size:24pt;'>{i[0]}<sub>{i[1]}</sub></span>",anchor=(0.5, 0.5))
+			text.setColor(self.states_color[i])
 			self.plot_graph.addItem(text)
 			if i.startswith("T"):
 				text.setPos(line[1]+0.12,energy[0])
 			else:
 				text.setPos(line[0]-0.12,energy[0])
-			text.setFont(font)
 		
 	def plot_process(self):
 		self.label_list=[]
 		all_lbl=[]
-		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
 		points=np.linspace(self.x_val["S"][0],self.x_val["S"][1]-0.4,len(self.sing_proc))
 		sing_ISC_points=np.linspace(self.x_val["S"][0]+0.4,self.x_val["S"][1],len(self.proc_ISC_list))
 		trip_ISC_points=np.linspace(self.x_val["T"][0],self.x_val["T"][1]-0.15,len(self.proc_ISC_list))
 
 		for j,i in enumerate(self.sing_proc):
-		#	if i[0] == 'ABS':
-		#		self.draw_dashed_arrow(points[j],self.states_dict[i[1]],self.states_dict[i[2]] )
 			if i[0] == 'FLU': 
-				self.draw_straight_arrow(points[j],self.states_dict[i[1]],self.states_dict[i[2]])	
+				self.draw_straight_arrow(points[j],self.states_dict[i[1]],self.states_dict[i[2]],self.states_color[i[1]])	
 				all_lbl.append((points[j],i))
 			elif i[0] == 'IC': 
-				self.draw_wiggly(points[j],self.states_dict[i[1]],self.states_dict[i[2]])
+				self.draw_wiggly(points[j],self.states_dict[i[1]],self.states_dict[i[2]],self.states_color[i[1]])
 				all_lbl.append((points[j],i))
 			else:
 				pass
 
 		for j,i in enumerate(self.proc_ISC_list):
 			if i[0] == 'ISC': 
-				self.draw_wiggly_curved(sing_ISC_points[j],self.states_dict[i[1]],trip_ISC_points[j],self.states_dict[i[2]])
+				self.draw_wiggly_curved(sing_ISC_points[j],self.states_dict[i[1]],trip_ISC_points[j],self.states_dict[i[2]],self.states_color[i[1]])
 				dx=trip_ISC_points[j] - sing_ISC_points[j] 
 				all_lbl.append((sing_ISC_points[j] + dx/2,i))
 			elif i[0] == 'RISC': 
-				self.draw_wiggly_curved(trip_ISC_points[j],self.states_dict[i[1]],sing_ISC_points[j],self.states_dict[i[2]])
+				self.draw_wiggly_curved(trip_ISC_points[j],self.states_dict[i[1]],sing_ISC_points[j],self.states_dict[i[2]],self.states_color[i[1]])
 				dx=trip_ISC_points[j] - sing_ISC_points[j] 
 				all_lbl.append((sing_ISC_points[j] + dx/2,i))
 			elif i[0] == 'PHO': 
-				self.draw_straight_arrow(trip_ISC_points[j],self.states_dict[i[1]],self.states_dict[i[2]])
+				self.draw_straight_arrow(trip_ISC_points[j],self.states_dict[i[1]],self.states_dict[i[2]],self.states_color[i[1]])
 				all_lbl.append((points[j],i))
 			else:
 				pass
 		self.plot_label(all_lbl)
 	
 
-	def draw_wiggly_curved(self,x_start,y_start,x_end,y_end):
+	def draw_wiggly_curved(self,x_start,y_start,x_end,y_end,color):
 		dy=y_end - y_start
 		dx=x_end - x_start
 		t=np.linspace(0,1,300)
@@ -415,7 +447,7 @@ class MainWindow(QMainWindow):
 		y_rot = sin_a * length * t + cos_a * wiggle
 		x_wiggle = x_start + x_rot
 		y_wiggle = y_start + y_rot   
-		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
+		pen = pg.mkPen(color=color, width=5, style=Qt.SolidLine)
 		self.plot_graph.plot(x_wiggle,y_wiggle,pen=pen)
 		if dy < 0 and dx < 0:
 			self.plot_graph.plot([x_end-0.02,x_end,x_end+0.02],[y_end-0.02,y_end,y_end-0.02],pen=pen)
@@ -427,8 +459,8 @@ class MainWindow(QMainWindow):
 			self.plot_graph.plot([x_end-0.02,x_end,x_end+0.02],[y_end+0.02,y_end,y_end+0.02],pen=pen)
 		return
 
-	def draw_wiggly(self,x,y_start,y_end):
-		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
+	def draw_wiggly(self,x,y_start,y_end,color):
+		pen = pg.mkPen(color=color, width=5, style=Qt.SolidLine)
 		dy=y_end - y_start
 		y=np.linspace(y_start,y_end+0.02,200)
 		x_wiggle=x+0.03*np.sin(2*np.pi*10*(y-y_start)/dy)
@@ -439,8 +471,8 @@ class MainWindow(QMainWindow):
 			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end+0.02,y_end,y_end+0.02],pen=pen)
 		return
 
-	def draw_straight_arrow(self,x,y_start,y_end):
-		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.SolidLine)
+	def draw_straight_arrow(self,x,y_start,y_end,color):
+		pen = pg.mkPen(color=color, width=5, style=Qt.SolidLine)
 		self.plot_graph.plot([x,x],[y_start,y_end],pen=pen)
 		if y_end-y_start > 0 :
 			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end-0.02,y_end,y_end-0.02],pen=pen)
@@ -448,8 +480,8 @@ class MainWindow(QMainWindow):
 			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end+0.02,y_end,y_end+0.02],pen=pen)
 		return
 
-	def draw_dashed_arrow(self,x,y_start,y_end):
-		pen = pg.mkPen(color=(0, 0, 255), width=5, style=Qt.DashLine)
+	def draw_dashed_arrow(self,x,y_start,y_end,color):
+		pen = pg.mkPen(color=color, width=5, style=Qt.DashLine)
 		self.plot_graph.plot([x,x],[y_start,y_end],pen=pen)
 		if y_end-y_start > 0 :
 			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end-0.02,y_end,y_end-0.02],pen=pen)
@@ -461,9 +493,10 @@ class MainWindow(QMainWindow):
 		font = QFont()
 		font.setPointSize(24)
 		for i in all_lbl:
-			text=pg.TextItem(html=f"<span style='font-size:16pt; color:blue;background-color:white; padding:2px'>k<sup>{i[1][0]}</sup>"
+			text=pg.TextItem(html=f"<span style='font-size:16pt; background-color:white; padding:2px'>k<sup>{i[1][0]}</sup>"
                                 f"<sub>{i[1][1]}→{i[1][2]}</sub>"
                                 f" = {i[1][3]}",anchor=(0.4, 0.5))
+			text.setColor(self.states_color[i[1][1]])
 			self.plot_graph.addItem(text)
 			if i[1][0] == 'ISC' or i[1][0] == 'RISC':
 				text.setPos(i[0],(self.states_dict[i[1][1]]+self.states_dict[i[1][2]])/2+np.random.rand()*(self.states_dict[i[1][2]]-self.states_dict[i[1][1]]))
@@ -482,9 +515,24 @@ class MainWindow(QMainWindow):
 
 		self.label_list.append(sample_y)
 		return sample_y
-
+	
+	def plot_again(self):
+		self.plot_states()
+		self.plot_process()
+	
+	def save_figure(self):
+		filename, _ = QFileDialog.getSaveFileName( self, "Save Plot", "", "PNG Files (*.png);;JPEG Files (*.jpg);;SVG Files(*.svg);;All Files (*)")
+		if filename:
+			if filename.lower().endswith(".svg"):
+				exporter = pg.exporters.SVGExporter(self.plot_graph.plotItem)
+				exporter.export(filename)
+			else:
+				exporter = pg.exporters.ImageExporter(self.plot_graph.plotItem)
+				exporter.parameters()['width'] = self.plot_graph.width() * 3
+				exporter.export(filename)
 
 if __name__ == "__main__":
 	app = QApplication(sys.argv)
 	window = MainWindow()
+	window.setWindowIcon(QIcon("icon.png"))
 	sys.exit(app.exec_())
