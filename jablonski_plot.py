@@ -249,6 +249,8 @@ class MainWindow(QMainWindow):
 		self.states_scroll_layout.insertWidget(self.states_scroll_layout.count() - 1,container)
 		self.add_process_function()
 		self.plot_states()			
+		self.plot_process()		
+
 		def remove_row():
 			self.states_scroll_layout.removeWidget(container)
 			container.deleteLater()
@@ -257,6 +259,7 @@ class MainWindow(QMainWindow):
 			self.states_color.pop(input_values['Name'])
 			self.add_process_function()
 			self.plot_states()
+			self.plot_process()		
 
 		remove_btn.clicked.connect(remove_row)
 
