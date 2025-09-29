@@ -1,10 +1,12 @@
+#!/usr/bin/env python
+
 import sys
-from PyQt5.QtWidgets import (
-    QApplication, QWidget, QGridLayout, QVBoxLayout, QFileDialog,QLineEdit,
-    QMessageBox, QFormLayout, QHBoxLayout, QMainWindow, QAction, QMenu, QComboBox,
-    QActionGroup, QDialog, QLabel, QGroupBox, QPushButton, QSpacerItem, QSizePolicy, QScrollArea, QColorDialog)
-from PyQt5.QtGui import QFont , QKeyEvent, QIcon
-from PyQt5.QtCore import Qt , QTimer, QPoint
+from PyQt6.QtWidgets import (
+    QApplication, QLayout, QWidget, QGridLayout, QVBoxLayout, QFileDialog,QLineEdit,
+    QMessageBox, QFormLayout, QHBoxLayout, QMainWindow, QMenu, QComboBox,
+    QDialog, QLabel, QGroupBox, QPushButton, QSpacerItem, QSizePolicy, QScrollArea, QColorDialog)
+from PyQt6.QtGui import QFont , QKeyEvent, QIcon
+from PyQt6.QtCore import Qt , QTimer, QPoint
 import pyqtgraph as pg
 import pyqtgraph.exporters
 import numpy as np
@@ -48,51 +50,57 @@ class MainWindow(QMainWindow):
 		right_layout = QVBoxLayout()
 		
 		add_states_group = QGroupBox("Add New State")
+		add_states_group.setFlat(True) 
 		add_states_layout = QVBoxLayout()
 		
 		self.input_container = QWidget()
 		self.input_layout = QVBoxLayout()
-		self.states_layout = QGridLayout()
+		#self.states_layout = QGridLayout()
 		input_container_layout = QVBoxLayout()
 		input_container_layout.addLayout(self.input_layout)
+		#input_container_layout.addLayout(self.states_layout)
 		input_container_layout.addSpacing(10)
-		input_container_layout.addLayout(self.states_layout)
 		
 		self.input_container.setLayout(input_container_layout)
 		self.input_container.setVisible(False)
 		add_states_layout.addWidget(self.input_container)
-		
-		
 		add_states_group.setLayout(add_states_layout)
-		
 		
 		right_layout.addWidget(add_states_group)
 		
 		add_process_group = QGroupBox("Add New Process")
+		add_process_group.setFlat(True) 
 		add_process_layout = QVBoxLayout()
 		
 		self.proc_input_container = QWidget()
 		self.proc_input_layout = QVBoxLayout()
-		self.process_layout = QGridLayout()
 		proc_input_container_layout = QVBoxLayout()
 		proc_input_container_layout.addLayout(self.proc_input_layout)
 		proc_input_container_layout.addSpacing(10)
-
-		proc_input_container_layout.addLayout(self.process_layout)		
 		self.proc_input_container.setLayout(proc_input_container_layout)
 		self.proc_input_container.setVisible(False)
 		add_process_layout.addWidget(self.proc_input_container)
 
 		add_process_group.setLayout(add_process_layout)
 
-		
-		spacer = QSpacerItem(1, 1, QSizePolicy.Minimum, QSizePolicy.Expanding)
-		add_process_layout.addItem(spacer)
-		
 		right_layout.addWidget(add_process_group)
-
+		
+		axis_rescale_group = QGroupBox("Rescale Energy Axis")
+		axis_rescale_group.setFlat(True) 
+		axis_rescale_layout = QVBoxLayout()
+			
+		self.rescale_axis_container = QWidget()
+		self.rescale_axis_layout = QHBoxLayout()
+		rescale_axis_container_layout = QHBoxLayout()
+		rescale_axis_container_layout.addLayout(self.rescale_axis_layout)
+		self.rescale_axis_container.setLayout(rescale_axis_container_layout)
+		self.rescale_axis_container.setVisible(False)
+		axis_rescale_layout.addWidget(self.rescale_axis_container)
+		axis_rescale_group.setLayout(axis_rescale_layout)	
+		right_layout.addWidget(axis_rescale_group)
 
 		buttons_group = QGroupBox()
+		buttons_group.setFlat(True) 
 		buttons_layout=QVBoxLayout()
 	
 		self.save_button = QPushButton("Save as Image")
@@ -104,9 +112,9 @@ class MainWindow(QMainWindow):
 		buttons_layout.addWidget(self.reload_button)
 
 		buttons_group.setLayout(buttons_layout)	
-		
 		right_layout.addWidget(buttons_group)
-
+		right_layout.addStretch(1)
+		right_layout.setAlignment(Qt.AlignmentFlag.AlignTop)
 		main_layout.addLayout(right_layout)
 
 		scroll_lists_layout = QVBoxLayout()
@@ -147,8 +155,7 @@ class MainWindow(QMainWindow):
 		self.setStyleSheet("""
 		    QMenuBar { font-family: Arial; font-size: 15pt; }
 		    QMenu { font-family: Arial; font-size: 13pt; }
-		    QAction { font-family: Arial; font-size: 13pt; }
-		    QGroupBox { font-family: Arial; font-size: 16pt; }
+		    QGroupBox { font-family: Arial; font-size: 16pt;}
 		    QLabel { font-family: Arial; font-size: 14pt; }
 		    QPushButton { font-family: Arial; font-size: 14pt; }
 		    QDialog { font-family: Arial; font-size: 14pt; }
@@ -167,6 +174,7 @@ class MainWindow(QMainWindow):
 		
 		self.add_state_function()
 		self.add_process_function()
+		self.rescale_axis_input()
 		self.showMaximized()
 	
 	
@@ -238,7 +246,7 @@ class MainWindow(QMainWindow):
 		self.states_dict.update({input_values["Name"]:float(input_values["Energy"])})	
 		self.states_list.append(input_values["Name"])
 		name_label = QLabel(f"<b>{input_values['Name']}: {input_values['Energy']} eV</b>")
-		name_label.setAlignment(Qt.AlignCenter)
+		name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 		remove_btn = QPushButton("Remove")
 		remove_btn.setFixedWidth(remove_btn.sizeHint().width() + 20)
 		remove_btn.setStyleSheet("font-size: 15px;")
@@ -309,6 +317,7 @@ class MainWindow(QMainWindow):
 		rate_label = QLabel("Rate constant (s<sup>-1</sup>)")
 		rate_edit = QLineEdit()
 		rate_edit.setText(f"Constant")
+		rate_edit.setFixedSize(300, 25)
 		new_process_row.addWidget(rate_label)
 		new_process_row.addWidget(rate_edit)
 		process_container = QWidget()
@@ -335,7 +344,7 @@ class MainWindow(QMainWindow):
 		name_label = QLabel(f"k<sup>{proc_input_values['Name']}</sup>"
 				f"<sub>{proc_input_values['State1']}→{proc_input_values['State2']}</sub>"
     				f" = {proc_input_values['Constant']}")
-		name_label.setAlignment(Qt.AlignCenter)
+		name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 		remove_btn = QPushButton("Remove")
 		remove_btn.setFixedWidth(remove_btn.sizeHint().width() + 20)
 		remove_btn.setStyleSheet("font-size: 15px;")
@@ -370,6 +379,53 @@ class MainWindow(QMainWindow):
 			self.color_button.setStyleSheet(f"background-color: {color.name()};")
 			self.color_button.color_value = color.name()
 
+	def rescale_axis_input(self):
+		for i in reversed(range(self.rescale_axis_layout.count())):
+			widget = self.rescale_axis_layout.itemAt(i).widget()
+			if widget is not None:
+				widget.setParent(None)	
+		self.axis_input_fields={}
+	
+		"""Minimum Y"""
+		y_min_row = QHBoxLayout()
+		y_min_label = QLabel(f"Y min")
+		y_min_edit = QLineEdit()
+		y_min_edit.setText(f"-0.001")
+		y_min_edit.setFixedSize(40, 25)
+		y_min_row.addWidget(y_min_label)
+		y_min_row.addWidget(y_min_edit)
+		y_min_container = QWidget()
+		y_min_container.setLayout(y_min_row)
+		self.rescale_axis_layout.addWidget(y_min_container)
+		self.axis_input_fields["Ymin"] = y_min_edit
+		
+		"""Maximum Y"""
+		y_max_row = QHBoxLayout()
+		y_max_label = QLabel(f"Y max")
+		y_max_edit = QLineEdit()
+		y_max_edit.setText(f"1.5")
+		y_max_edit.setFixedSize(40, 25)
+		y_max_row.addWidget(y_max_label)
+		y_max_row.addWidget(y_max_edit)
+		y_max_container = QWidget()
+		y_max_container.setLayout(y_max_row)
+		self.rescale_axis_layout.addWidget(y_max_container)
+		self.axis_input_fields["Ymax"] = y_max_edit
+
+		apply_btn = QPushButton("Apply")
+		apply_btn.clicked.connect(self.rescale_axis)
+		self.rescale_axis_layout.addWidget(apply_btn)
+		
+		self.rescale_axis_container.setVisible(True)
+	
+	def rescale_axis(self):
+		axis_rescale_input_values = {
+		    key: field.text()
+			for key, field in self.axis_input_fields.items()
+		}
+		self.plot_graph.setYRange(float(axis_rescale_input_values['Ymin']),float(axis_rescale_input_values['Ymax']))			
+		
+
 	def plot_states(self):
 		self.plot_graph.clear()
 		self.plot_graph.setXRange(0,3.5)
@@ -383,7 +439,7 @@ class MainWindow(QMainWindow):
 				line=self.x_val["T"]
 			else:
 				line=self.x_val["S"]
-			pen = pg.mkPen(color=self.states_color[i], width=5, style=Qt.SolidLine)
+			pen = pg.mkPen(color=self.states_color[i], width=5, style=Qt.PenStyle.SolidLine)
 			energy=[float(self.states_dict[i]),float(self.states_dict[i])]
 			self.plot_graph.plot(line,energy,pen=pen)
 			text=pg.TextItem(html=f"<span style='font-size:24pt;'>{i[0]}<sub>{i[1]}</sub></span>",anchor=(0.5, 0.5))
@@ -450,7 +506,7 @@ class MainWindow(QMainWindow):
 		y_rot = sin_a * length * t + cos_a * wiggle
 		x_wiggle = x_start + x_rot
 		y_wiggle = y_start + y_rot   
-		pen = pg.mkPen(color=color, width=5, style=Qt.SolidLine)
+		pen = pg.mkPen(color=color, width=5, style=Qt.PenStyle.SolidLine)
 		self.plot_graph.plot(x_wiggle,y_wiggle,pen=pen)
 		if dy < 0 and dx < 0:
 			self.plot_graph.plot([x_end-0.02,x_end,x_end+0.02],[y_end-0.02,y_end,y_end-0.02],pen=pen)
@@ -463,7 +519,7 @@ class MainWindow(QMainWindow):
 		return
 
 	def draw_wiggly(self,x,y_start,y_end,color):
-		pen = pg.mkPen(color=color, width=5, style=Qt.SolidLine)
+		pen = pg.mkPen(color=color, width=5, style=Qt.PenStyle.SolidLine)
 		dy=y_end - y_start
 		y=np.linspace(y_start,y_end+0.02,200)
 		x_wiggle=x+0.03*np.sin(2*np.pi*10*(y-y_start)/dy)
@@ -475,7 +531,7 @@ class MainWindow(QMainWindow):
 		return
 
 	def draw_straight_arrow(self,x,y_start,y_end,color):
-		pen = pg.mkPen(color=color, width=5, style=Qt.SolidLine)
+		pen = pg.mkPen(color=color, width=5, style=Qt.PenStyle.SolidLine)
 		self.plot_graph.plot([x,x],[y_start,y_end],pen=pen)
 		if y_end-y_start > 0 :
 			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end-0.02,y_end,y_end-0.02],pen=pen)
@@ -484,7 +540,7 @@ class MainWindow(QMainWindow):
 		return
 
 	def draw_dashed_arrow(self,x,y_start,y_end,color):
-		pen = pg.mkPen(color=color, width=5, style=Qt.DashLine)
+		pen = pg.mkPen(color=color, width=5, style=Qt.PenStyle.DashLine)
 		self.plot_graph.plot([x,x],[y_start,y_end],pen=pen)
 		if y_end-y_start > 0 :
 			self.plot_graph.plot([x-0.02,x,x+0.02],[y_end-0.02,y_end,y_end-0.02],pen=pen)
@@ -534,8 +590,11 @@ class MainWindow(QMainWindow):
 				exporter.parameters()['width'] = self.plot_graph.width() * 3
 				exporter.export(filename)
 
+def main():
+        app = QApplication(sys.argv) 
+        window = MainWindow()
+        window.setWindowIcon(QIcon("icon.png"))
+        sys.exit(app.exec())
+
 if __name__ == "__main__":
-	app = QApplication(sys.argv)
-	window = MainWindow()
-	window.setWindowIcon(QIcon("icon.png"))
-	sys.exit(app.exec_())
+	main()

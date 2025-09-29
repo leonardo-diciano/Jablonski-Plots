@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jablonski-plots"
+version = "1.0"
+description = "An easy way to plot publication-ready Jablonski diagrams"
+readme = "README.md"
+license = { text = "GPL-3.0" }
+authors = [
+  { name = "Leonardo Di Ciano", email = "leonardo.di-ciano.8594@student.uu.se" }
+]
+keywords = ["Jablonski", "Energy", "Diagrams", "Plot", "Spectroscopy", "Photochemistry"]
+
+classifiers = [
+  "Development Status :: 5 - Production/Stable",
+  "Intended Audience :: Science/Research",
+  "Topic :: Scientific/Engineering :: Visualization",
+  "Topic :: Scientific/Engineering :: Chemistry",
+  "Topic :: Multimedia :: Graphics",
+  "Environment :: X11 Applications :: Qt",
+  "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.6"
+]
+
+requires-python = ">=3.6"
+dependencies = [
+  "PyQt6",
+  "pyqtgraph",
+  "numpy"
+]
+
+[project.urls]
+Homepage = "https://github.com/leonardo-diciano/Jablonski_Plots"
+Download = "https://github.com/leonardo-diciano/Jablonski_Plots/archive/refs/tags/v1.0.tar.gz"
+
+[project.scripts]
+jablonski-plots = "jablonski_plots:main"
