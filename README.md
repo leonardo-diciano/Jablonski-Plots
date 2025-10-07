@@ -13,10 +13,10 @@ Alternatively, it is possible to clone this repository
 ```
 and the program can be run directly or through a python interpreter, no installation is needed. 
 ```
-./jablonski_plots.py
+./jablonski-plots.py
 ```
 ```
-python jablonski_plots.py
+python jablonski-plots.py
 ```
 The cloned Jablonski Plots directory may be added to the system PATH, for a quicker start.
 ```
