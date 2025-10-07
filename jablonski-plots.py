@@ -31,7 +31,7 @@ class MainWindow(QMainWindow):
 		self.proc_ISC_list=[]
 		self.sing_proc=[]
 		self.label_list=[]
-		self.x_val={'S':[0.2,1.2],'T':[2.2,2.8]}	
+		self.x_val={'S':[0.6,1.6],'T':[2.6,3.2]}	
 		self.states_color={}
 		
 		#Set main layout and plot widget
@@ -41,14 +41,14 @@ class MainWindow(QMainWindow):
 
 		self.plot_graph = pg.PlotWidget(background='w')
 		main_layout.addWidget(self.plot_graph)
-		self.plot_graph.setXRange(0,3.1)
+		self.plot_graph.setXRange(0,3.5)
 		self.plot_graph.setYRange(-0.001,1.5)
 		self.plot_graph.getPlotItem().hideAxis('bottom')
 		self.plot_graph.setLabel("left",'<span style="color: black; font-size: 24px"> Energy (eV) </span>')
 		self.plot_graph.getAxis("left").setPen(pg.mkPen(color='black',width=5))
-		self.plot_graph.getAxis("left").setTickFont(QFont().setPointSize(14))
+		self.plot_graph.getAxis("left").setTickFont(QFont().setPointSize(18))
 		self.plot_graph.getAxis("left").setTextPen(pg.mkPen(color='black'))
-		self.plot_graph.getAxis("left").setTickSpacing(major=0.2,minor=0.2)
+		self.plot_graph.getAxis("left").setTickSpacing(major=0.5,minor=0.5)
 		self.plot_graph.getPlotItem().setMouseEnabled(x=False,y=False)		
 		self.plot_graph.plotItem.setMenuEnabled(False)
 		self.plot_graph.getPlotItem()	
@@ -306,7 +306,7 @@ class MainWindow(QMainWindow):
 		new_process_row = QVBoxLayout()
 		name_label = QLabel(f"Name")
 		name_edit = QComboBox()
-		name_edit.addItems(['FLU','IC','PHO','ISC','RISC'])
+		name_edit.addItems(['FLU','IC','PHO','ISC','RISC','ABS'])
 		new_process_row.addWidget(name_label)
 		new_process_row.addWidget(name_edit)
 		name_container = QWidget()
@@ -347,6 +347,16 @@ class MainWindow(QMainWindow):
 		self.proc_input_layout.addWidget(process_container)
 		self.proc_input_fields["Constant"] = rate_edit
 
+		def on_process_change(process_name):
+			if process_name == "ABS":
+				rate_label.setText("Absorption coefficient or other text")
+				rate_edit.setText("")
+			else:
+				rate_label.setText("Rate constant (s<sup>-1</sup>)")
+				rate_edit.setText("Constant")
+		#Adapt the menu to the type of process
+		name_edit.currentTextChanged.connect(on_process_change)
+
 		#Save button for input data
 		save_btn = QPushButton("Save")
 		save_btn.clicked.connect(self.save_input_process)
@@ -366,7 +376,10 @@ class MainWindow(QMainWindow):
 		#Update the scroll area in the GUI 	
 		container = QWidget()
 		proc_row = QHBoxLayout(container)
-		name_label = QLabel(f"k<sup>{proc_input_values['Name']}</sup>"
+		if proc_input_values['Name'] == "ABS":
+			name_label = QLabel(f"ABS: {proc_input_values['State1']}→{proc_input_values['State2']}")
+		else:
+			name_label = QLabel(f"k<sup>{proc_input_values['Name']}</sup>"
 				f"<sub>{proc_input_values['State1']}→{proc_input_values['State2']}</sub>"
     				f" = {proc_input_values['Constant']}")
 		name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
@@ -485,7 +498,7 @@ class MainWindow(QMainWindow):
 			energy=[float(self.states_dict[i]),float(self.states_dict[i])]
 			self.plot_graph.plot(line,energy,pen=pen) #Line plot
 			#Generate label 
-			text=pg.TextItem(html=f"<span style='font-size:24pt;'>{i[0]}<sub>{i[1]}</sub></span>",anchor=(0.5, 0.5))
+			text=pg.TextItem(html=f"<span style='font-size:24pt;'>{i[0]}<sub>{i[1:]}</sub></span>",anchor=(0.5, 0.5))
 			text.setColor(self.states_color[i])
 			self.plot_graph.addItem(text)
 			#Set its position depending on the multiplicity
@@ -512,6 +525,9 @@ class MainWindow(QMainWindow):
 				all_lbl.append((points[j],i))
 			elif i[0] == 'IC': 
 				self.draw_wiggly(points[j],self.states_dict[i[1]],self.states_dict[i[2]],self.states_color[i[1]])
+				all_lbl.append((points[j],i))
+			elif i[0] == 'ABS':
+				self.draw_dashed_arrow(points[j],self.states_dict[i[1]],self.states_dict[i[2]],self.states_color[i[2]])
 				all_lbl.append((points[j],i))
 			else:
 				pass
@@ -608,7 +624,7 @@ class MainWindow(QMainWindow):
 		return
 
 	def draw_dashed_arrow(self,x,y_start,y_end,color):
-		"""Function to plot dashed vertical arrows, unused at the moment"""
+		"""Function to plot dashed vertical arrows, used for absorption"""
 		pen = pg.mkPen(color=color, width=5, style=Qt.PenStyle.DashLine)
 		self.plot_graph.plot([x,x],[y_start,y_end],pen=pen)
 		if y_end-y_start > 0 :
@@ -623,10 +639,15 @@ class MainWindow(QMainWindow):
 		font = QFont()
 		font.setPointSize(24)
 		for i in all_lbl:
-			text=pg.TextItem(html=f"<span style='font-size:16pt; background-color:white; padding:2px'>k<sup>{i[1][0]}</sup>"
-                                f"<sub>{i[1][1]}→{i[1][2]}</sub>"
-                                f" = {i[1][3]}",anchor=(0.4, 0.5))
-			text.setColor(self.states_color[i[1][1]])
+			if i[1][0] == 'ABS':
+				if i[1][3] :
+					text=pg.TextItem(html=f"<span style='font-size:24pt; background-color:white; padding:2px'>{i[1][3]}",anchor=(0.4, 0.5))	
+					text.setColor(self.states_color[i[1][2]])
+			else:
+				text=pg.TextItem(html=f"<span style='font-size:24pt; background-color:white; padding:2px'>k<sup>{i[1][0]}</sup>"
+                                	f"<sub>{i[1][1]}→{i[1][2]}</sub>"
+                                	f" = {i[1][3]}",anchor=(0.4, 0.5))
+				text.setColor(self.states_color[i[1][1]])
 			self.plot_graph.addItem(text)
 			if i[1][0] == 'ISC' or i[1][0] == 'RISC':
 				text.setPos(i[0],(self.states_dict[i[1][1]]+self.states_dict[i[1][2]])/2+np.random.rand()*(self.states_dict[i[1][2]]-self.states_dict[i[1][1]]))
