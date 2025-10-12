@@ -407,11 +407,15 @@ class MainWindow(QMainWindow):
 			self.proc_scroll_layout.removeWidget(container)
 			container.deleteLater()
 			#Update lists/dicts
-			self.proc_list.remove((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
-			if proc_input_values["Name"] == 'ISC' or proc_input_values["Name"] == 'RISC': 
-				self.proc_ISC_list.remove((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
-			else:
-				self.sing_proc.remove((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
+
+			try:
+				self.proc_list.remove((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
+				if proc_input_values["Name"] == 'ISC' or proc_input_values["Name"] == 'RISC': 
+					self.proc_ISC_list.remove((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
+				else:
+					self.sing_proc.remove((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
+			except:
+				pass
 			#Update plots
 			self.plot_states()
 			self.plot_process()
@@ -640,7 +644,7 @@ class MainWindow(QMainWindow):
 		font.setPointSize(24)
 		for i in all_lbl:
 			if i[1][0] == 'ABS':
-				if i[1][3] :
+				if not i[1][3] == None :
 					text=pg.TextItem(html=f"<span style='font-size:24pt; background-color:white; padding:2px'>{i[1][3]}",anchor=(0.4, 0.5))	
 					text.setColor(self.states_color[i[1][2]])
 			else:
