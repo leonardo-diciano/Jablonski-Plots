@@ -1,5 +1,6 @@
 # <img src="https://raw.githubusercontent.com/leonardo-diciano/Jablonski-Plots/main/screenshots/icon.png" alt="icon" width="50" />    Jablonski Plots
-### An easy way to plot publication-ready Jablonski diagrams
+### An easy way to plot publication-ready Jablonski diagrams 
+[![DOI](https://zenodo.org/badge/1052758037.svg)](https://doi.org/10.5281/zenodo.17508675)
 
 ![Screenshot of Jablonski Plots app](https://raw.githubusercontent.com/leonardo-diciano/Jablonski-Plots/main/screenshots/screen2.png)
 
