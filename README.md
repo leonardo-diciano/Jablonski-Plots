@@ -51,6 +51,8 @@ The arrows and their label are of the same color as their intial state, with exc
 
 ### Examples
 <p align="center">
-  <img src="/screenshots/example1.png" alt="Image 1" width="45%"/>
+  <img src="/screenshots/example1.png" alt="Image 1" width="43.7%"/>
   <img src="/screenshots/example2.png" alt="Image 2" width="45%"/>
 </p>
+
+![Screenshot of Jablonski Plots app](/screenshots/screen1.png)
