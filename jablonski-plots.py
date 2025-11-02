@@ -317,7 +317,7 @@ class MainWindow(QMainWindow):
 		self.proc_input_fields["Name"] = name_edit
 		
 		#States involved choice
-		state1_label = QLabel("State1")
+		state1_label = QLabel("State 1")
 		state1_edit = QComboBox()
 		state1_edit.addItems(self.states_list)
 		new_process_row.addWidget(state1_label)
@@ -327,7 +327,7 @@ class MainWindow(QMainWindow):
 		self.proc_input_layout.addWidget(state1_container)
 		self.proc_input_fields["State1"] = state1_edit
 
-		state2_label = QLabel("State2")
+		state2_label = QLabel("State 2")
 		state2_edit = QComboBox()
 		state2_edit.addItems(self.states_list)
 		new_process_row.addWidget(state2_label)
