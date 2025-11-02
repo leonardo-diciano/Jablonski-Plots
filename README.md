@@ -1,7 +1,7 @@
-# <img src="screenshots/icon.png" alt="icon" width="50" />    Jablonski Plots
+# <img src="https://github.com/leonardo-diciano/Jablonski-Plots/blob/4429d94db042ef0faf43bccde994d7ed77dac7b4/screenshots/icon.png" alt="icon" width="50" />    Jablonski Plots
 ### An easy way to plot publication-ready Jablonski diagrams
 
-![Screenshot of Jablonski Plots app](/screenshots/screen2.png)
+![Screenshot of Jablonski Plots app](https://github.com/leonardo-diciano/Jablonski-Plots/blob/4429d94db042ef0faf43bccde994d7ed77dac7b4/screenshots/screen2.png)
 
 ### Installation
 Jablonski Plots can be easily installed from pip.
@@ -51,8 +51,8 @@ The arrows and their label are of the same color as their intial state, with exc
 
 ### Examples
 <p align="center">
-  <img src="/screenshots/example1.png" alt="Image 1" width="43.7%"/>
-  <img src="/screenshots/example2.png" alt="Image 2" width="45%"/>
+  <img src="https://github.com/leonardo-diciano/Jablonski-Plots/blob/4429d94db042ef0faf43bccde994d7ed77dac7b4/screenshots/example1.png" alt="Image 1" width="43.7%"/>
+  <img src="https://github.com/leonardo-diciano/Jablonski-Plots/blob/4429d94db042ef0faf43bccde994d7ed77dac7b4/screenshots/example2.png" alt="Image 2" width="45%"/>
 </p>
 
-![Screenshot of Jablonski Plots app](/screenshots/screen1.png)
+![Screenshot of Jablonski Plots app](https://github.com/leonardo-diciano/Jablonski-Plots/blob/4429d94db042ef0faf43bccde994d7ed77dac7b4/screenshots/screen1.png)
