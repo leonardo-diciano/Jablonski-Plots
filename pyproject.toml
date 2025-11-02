@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "jablonski-plots"
-version = "1.0.1"
+version = "1.0.2"
 description = "An easy way to plot publication-ready Jablonski diagrams"
 readme = "README.md"
 license = { text = "GPL-3.0" }
