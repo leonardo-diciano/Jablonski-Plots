@@ -1,6 +1,7 @@
 # <img src="screenshots/icon.png" alt="icon" width="50" />    Jablonski Plots
 ### An easy way to plot publication-ready Jablonski diagrams
 
+![Screenshot of Jablonski Plots app](/screenshots/screen2.png)
 
 ### Installation
 Jablonski Plots can be easily installed from pip.
@@ -33,7 +34,7 @@ The required libraries are:
 After Jablonski Plots app can be easily launched from the command line and the GUI is very intuitive. It is composed by three main parts:
   * On the left there is the Jablonski plot, which readily updates each them new information are added or removed.
   * On the center there is the main menu, composed by:
-      * An _Add New State_ section, where the state label (ie. S_1 or T_1), its energy and its color in the plot may be chosen for each state inserted. The procedure is completed with the corresponding Save button.
+      * An _Add New State_ section, where the state label (ie. S_1 or T_1), its energy and its color in the plot may be chosen for each state inserted. The procedure is completed with the corresponding Save button. At the moment, only singlet states with labels starting by "S" and triplet states with labels starting by "T" works.
       * An _Add New Process_ section, where the process type may be selected between fluorescence (FLU), internal conversion (IC), intersystem crossing (ISC), reverse intersystem crossing (RISC), phosphoresence (PHO) and absorbance(ABS). Then, the initial and final state for the process can be selected between the added states and the corresponding rate constant may be written in the last entry. The information are stored with the "Save" button and the plot is updated accordingly. For the absorbance feature, the rate constant field is subsituted with an absorption coefficient coefficient, a plain text or just nothing.
       * A _Rescale Energy Axis_ section, which allows to indicate the minimum and maximum Y value for the energy axis and apply it to the plot with the Apply button.
       * A _Save as Image_ button, that allows to export the Jablonski plot as .PNG, .JPEG and .SVG files in the desired location.
@@ -50,3 +51,7 @@ In Jablonski Plots, each process is represented with a specific type of arrow:
 The arrows and their label are of the same color as their intial state, with exception of absorption where the arrow color depends on the final state.
 
 ### Examples
+<p align="center">
+  <img src="/screenshots/example1.png" alt="Image 1" width="45%"/>
+  <img src="/screenshots/example2.png" alt="Image 2" width="45%"/>
+</p>
