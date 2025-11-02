@@ -46,9 +46,11 @@ class MainWindow(QMainWindow):
 		self.plot_graph.getPlotItem().hideAxis('bottom')
 		self.plot_graph.setLabel("left",'<span style="color: black; font-size: 24px"> Energy (eV) </span>')
 		self.plot_graph.getAxis("left").setPen(pg.mkPen(color='black',width=5))
-		self.plot_graph.getAxis("left").setTickFont(QFont().setPointSize(18))
 		self.plot_graph.getAxis("left").setTextPen(pg.mkPen(color='black'))
 		self.plot_graph.getAxis("left").setTickSpacing(major=0.5,minor=0.5)
+		font = QFont()
+		font.setPointSize(20)
+		self.plot_graph.getAxis("left").setTickFont(font)
 		self.plot_graph.getPlotItem().setMouseEnabled(x=False,y=False)		
 		self.plot_graph.plotItem.setMenuEnabled(False)
 		self.plot_graph.getPlotItem()	
@@ -513,8 +515,9 @@ class MainWindow(QMainWindow):
 		
 	def plot_process(self):
 		"""Function that handles the plotting of process arrows and labels"""
-		#initialize a label list
+		#initialize the label lists
 		all_lbl=[]
+		self.label_list=[]
 		#Generate points in the to anchor the arrows, ensures the largest possible spread and improve readibilty	
 		points=np.linspace(self.x_val["S"][0],self.x_val["S"][1]-0.4,len(self.sing_proc))
 		sing_ISC_points=np.linspace(self.x_val["S"][1]-0.4,self.x_val["S"][1],len(self.proc_ISC_list))
@@ -654,7 +657,7 @@ class MainWindow(QMainWindow):
 				text.setColor(self.states_color[i[1][1]])
 			self.plot_graph.addItem(text)
 			if i[1][0] == 'ISC' or i[1][0] == 'RISC':
-				text.setPos(i[0],(self.states_dict[i[1][1]]+self.states_dict[i[1][2]])/2+np.random.rand()*(self.states_dict[i[1][2]]-self.states_dict[i[1][1]]))
+				text.setPos(i[0],(self.states_dict[i[1][1]]+self.states_dict[i[1][2]])/2+np.random.rand()*(self.states_dict[i[1][2]]-self.states_dict[i[1][1]])*0.5)
 			else:
 				text.setPos(i[0],self.gen_label_y(self.states_dict[i[1][1]],self.states_dict[i[1][2]]))
 			text.setFont(font)
