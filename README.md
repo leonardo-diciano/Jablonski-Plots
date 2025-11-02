@@ -39,7 +39,6 @@ After Jablonski Plots app can be easily launched from the command line and the G
       * A _Rescale Energy Axis_ section, which allows to indicate the minimum and maximum Y value for the energy axis and apply it to the plot with the Apply button.
       * A _Save as Image_ button, that allows to export the Jablonski plot as .PNG, .JPEG and .SVG files in the desired location.
       * A _Plot Again_ button, which shuffles the label positions and allows to easily fix any visualization problem.
-      * A _Clear All_ button, which completely cleanes the plot and any information introduced (ie processes and states).
   * On the right, two list will keep track of every state (_State Energies List_) and process (_Process List_) added in the system, alongside with a button to remove each one of them.
 
 ### Processes representations
