@@ -6,15 +6,14 @@
 
 import sys
 from PyQt6.QtWidgets import (
-    QApplication, QLayout, QWidget, QGridLayout, QVBoxLayout, QFileDialog,QLineEdit,
-    QMessageBox, QFormLayout, QHBoxLayout, QMainWindow, QMenu, QComboBox,
-    QDialog, QLabel, QGroupBox, QPushButton, QSpacerItem, QSizePolicy, QScrollArea, QColorDialog)
-from PyQt6.QtGui import QFont , QKeyEvent, QIcon
-from PyQt6.QtCore import Qt , QTimer, QPoint
+    QApplication, QWidget, QVBoxLayout, QFileDialog,QLineEdit, QHBoxLayout, 
+	QMainWindow, QComboBox, QLabel, QGroupBox, QPushButton, QScrollArea, QColorDialog)
+from PyQt6.QtGui import QFont , QIcon
+from PyQt6.QtCore import Qt
 import pyqtgraph as pg
-import pyqtgraph.exporters
 import numpy as np
 import os
+import random
 
 
 class MainWindow(QMainWindow):
@@ -26,12 +25,13 @@ class MainWindow(QMainWindow):
 	
 		#Variables initialization
 		self.states_dict={}
+		self.states_energies={}
 		self.states_list=[]
 		self.proc_list=[]
 		self.proc_ISC_list=[]
 		self.sing_proc=[]
 		self.label_list=[]
-		self.x_val={'S':[0.6,1.6],'T':[2.6,3.2]}	
+		self.x_val={'1':[0.6,1.6],'2':[1.8,2.4],'3':[2.6,3.2],'4':[3.4,4.0],'5':[4.2,4.8],}	
 		self.states_color={}
 		
 		#Set main layout and plot widget
@@ -41,7 +41,7 @@ class MainWindow(QMainWindow):
 
 		self.plot_graph = pg.PlotWidget(background='w')
 		main_layout.addWidget(self.plot_graph)
-		self.plot_graph.setXRange(0,3.5)
+		self.plot_graph.setXRange(0,5.0)
 		self.plot_graph.setYRange(-0.001,1.5)
 		self.plot_graph.getPlotItem().hideAxis('bottom')
 		self.plot_graph.setLabel("left",'<span style="color: black; font-size: 24px"> Energy (eV) </span>')
@@ -188,9 +188,21 @@ class MainWindow(QMainWindow):
 			if widget is not None:
 				widget.setParent(None)	
 		self.input_fields={}
-	
-		#State Name
+		
 		new_state_row = QHBoxLayout()
+
+		#Multiplicity
+		mult_label = QLabel(f"Multiplicity")
+		mult_edit = QComboBox()
+		mult_edit.addItems(self.x_val.keys())
+		new_state_row.addWidget(mult_label)
+		new_state_row.addWidget(mult_edit)
+		mult_container = QWidget()
+		mult_container.setLayout(new_state_row)
+		self.input_layout.addWidget(mult_container)
+		self.input_fields["Mult"] = mult_edit
+
+		#State Name
 		name_label = QLabel(f"Name")
 		name_edit = QLineEdit()
 		name_edit.setText(f"S0")
@@ -246,18 +258,21 @@ class MainWindow(QMainWindow):
 				input_values[key] = field.text() 
 			elif isinstance(field, QPushButton) and hasattr(field, "color_value"):
 				input_values[key] = field.color_value
+			elif isinstance(field,QComboBox):
+				input_values[key] = field.currentText() 
 			else:
-				 input_values[key] = None
+				input_values[key] = None
 	
 		#Save input data in different list and dictionaries for later use	
-		self.states_dict.update({input_values["Name"]:float(input_values["Energy"])})	
+		self.states_dict.update({input_values["Name"]:[input_values["Mult"],float(input_values["Energy"])]})
+		self.states_energies.update({input_values["Name"]:float(input_values["Energy"])})	
 		self.states_list.append(input_values["Name"])
 		self.states_color.update({input_values["Name"]:input_values["Color"]})
 
 		#Add labels in the scroll area along with a remove button
 		container = QWidget()
 		state_row = QHBoxLayout(container)
-		name_label = QLabel(f"<b>{input_values['Name']}: {input_values['Energy']} eV</b>")
+		name_label = QLabel(f"<b><sup>{input_values['Mult']}</sup>{input_values['Name']}: {input_values['Energy']} eV</b>")
 		name_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
 		remove_btn = QPushButton("Remove")
 		remove_btn.setFixedWidth(remove_btn.sizeHint().width() + 20)
@@ -279,6 +294,7 @@ class MainWindow(QMainWindow):
 			container.deleteLater()
 			#All lists/dict update
 			self.states_dict.pop(input_values['Name'])
+			self.states_energies.pop(input_values['Name'])
 			self.states_list.remove(input_values['Name'])
 			self.states_color.pop(input_values['Name'])
 			for i in self.proc_list:
@@ -395,9 +411,9 @@ class MainWindow(QMainWindow):
 		#Add the process to the proper lists and dictionaries	
 		self.proc_list.append((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))	
 		if proc_input_values["Name"] == 'ISC' or proc_input_values["Name"] == 'RISC':
-			 self.proc_ISC_list.append((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
+			self.proc_ISC_list.append((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
 		else:
-			 self.sing_proc.append((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
+			self.sing_proc.append((proc_input_values["Name"],proc_input_values["State1"],proc_input_values["State2"],proc_input_values["Constant"]))
 		
 		#Update plots	
 		self.plot_states()
@@ -485,33 +501,37 @@ class MainWindow(QMainWindow):
 		"""Function to plot the states lines and labels"""
 		#Start by cleaning previous instances and resetting the X Range
 		self.plot_graph.clear()
-		self.plot_graph.setXRange(0,3.5)
-
+		self.plot_graph.setXRange(0,5.5)
+		
 		#Set the Y Range for an easy to read plot
-		if self.states_dict and all(v is not None for v in self.states_dict.values()):		
-			self.plot_graph.setYRange(-0.001,max(1.5,max(self.states_dict.values())+0.25))
+		if self.states_dict and all(v is not None for v in self.states_energies):		
+			self.plot_graph.setYRange(-0.001,max(1.5,max(self.states_energies.values())+0.25))
 		else:
 			self.plot_graph.setYRange(-0.001,1.5)
 
 		#The X range to plot is taken as a function of the state multiplicity, taken from the label 
-		for i in self.states_list:
-			if i.startswith("T"):
-				line=self.x_val["T"]
-			else:
-				line=self.x_val["S"]
+		for j in self.states_dict.keys():
+			i=self.states_dict[j]
+			line=self.x_val[i[0]]
+
 			#Uses the color selected by the user for the state
-			pen = pg.mkPen(color=self.states_color[i], width=5, style=Qt.PenStyle.SolidLine)
-			energy=[float(self.states_dict[i]),float(self.states_dict[i])]
+			pen = pg.mkPen(color=self.states_color[j], width=5, style=Qt.PenStyle.SolidLine)
+			energy=[float(self.states_energies[j]),float(self.states_energies[j])]
 			self.plot_graph.plot(line,energy,pen=pen) #Line plot
 			#Generate label 
-			text=pg.TextItem(html=f"<span style='font-size:24pt;'>{i[0]}<sub>{i[1:]}</sub></span>",anchor=(0.5, 0.5))
-			text.setColor(self.states_color[i])
+			text=pg.TextItem(html=f"<span style='font-size:24pt;'>{j[0]}<sub>{j[1:]}</sub></span>",anchor=(0.5, 0.5))
+			text.setColor(self.states_color[j])
 			self.plot_graph.addItem(text)
 			#Set its position depending on the multiplicity
-			if i.startswith("T"):
-				text.setPos(line[1]+0.12,energy[0])
+			if any(self.states_energies.values()) + 0.05 > energy[0] and any(self.states_energies.values()) - 0.05 < energy[0]:
+				disp=0.5
 			else:
-				text.setPos(line[0]-0.12,energy[0])
+				disp=0.0
+
+			if i[0]=="1" :
+				text.setPos(line[0]-0.12,energy[0]+ disp * random.randint(-1, 1))
+			else:
+				text.setPos(line[1]+0.12,energy[0])
 		
 	def plot_process(self):
 		"""Function that handles the plotting of process arrows and labels"""
@@ -519,37 +539,66 @@ class MainWindow(QMainWindow):
 		all_lbl=[]
 		self.label_list=[]
 		#Generate points in the to anchor the arrows, ensures the largest possible spread and improve readibilty	
-		points=np.linspace(self.x_val["S"][0],self.x_val["S"][1]-0.4,len(self.sing_proc))
-		sing_ISC_points=np.linspace(self.x_val["S"][1]-0.4,self.x_val["S"][1],len(self.proc_ISC_list))
-		trip_ISC_points=np.linspace(self.x_val["T"][0],self.x_val["T"][1]-0.15,len(self.proc_ISC_list))
+		points=np.linspace(self.x_val["1"][0],self.x_val["1"][1]-0.4,len(self.sing_proc))
+		sing_ISC_points=np.linspace(self.x_val["1"][1]-0.4,self.x_val["1"][1],len(self.proc_ISC_list))
+		doub_ISC_points=np.linspace(self.x_val["2"][1]-0.4,self.x_val["2"][1],len(self.proc_ISC_list))
+		trip_ISC_points=np.linspace(self.x_val["3"][0],self.x_val["3"][1]-0.15,len(self.proc_ISC_list))
+		quad_ISC_points=np.linspace(self.x_val["4"][0],self.x_val["4"][1]-0.15,len(self.proc_ISC_list))
+		quin_ISC_points=np.linspace(self.x_val["5"][0],self.x_val["5"][1]-0.15,len(self.proc_ISC_list))
 		
 		#First plots process only involving singlet states
 		#Each process is connected to a specific type of arrow, which are described by one function each
 		#The label is appended to a label list
 		for j,i in enumerate(self.sing_proc):
 			if i[0] == 'FLU': 
-				self.draw_straight_arrow(points[j],self.states_dict[i[1]],self.states_dict[i[2]],self.states_color[i[1]])	
+				self.draw_straight_arrow(points[j],self.states_energies[i[1]],self.states_energies[i[2]],self.states_color[i[1]])	
 				all_lbl.append((points[j],i))
 			elif i[0] == 'IC': 
-				self.draw_wiggly(points[j],self.states_dict[i[1]],self.states_dict[i[2]],self.states_color[i[1]])
+				self.draw_wiggly(points[j],self.states_energies[i[1]],self.states_energies[i[2]],self.states_color[i[1]])
 				all_lbl.append((points[j],i))
 			elif i[0] == 'ABS':
-				self.draw_dashed_arrow(points[j],self.states_dict[i[1]],self.states_dict[i[2]],self.states_color[i[2]])
+				self.draw_dashed_arrow(points[j],self.states_energies[i[1]],self.states_energies[i[2]],self.states_color[i[2]])
 				all_lbl.append((points[j],i))
 			else:
 				pass
 		#Same but for the triplet involving process
 		for j,i in enumerate(self.proc_ISC_list):
 			if i[0] == 'ISC': 
-				self.draw_wiggly_curved(sing_ISC_points[j],self.states_dict[i[1]],trip_ISC_points[j],self.states_dict[i[2]],self.states_color[i[1]])
-				dx=trip_ISC_points[j] - sing_ISC_points[j] 
-				all_lbl.append((sing_ISC_points[j] + dx/2,i))
+				if self.states_dict[i[1]][0] == '1' and self.states_dict[i[2]][0] == '3':
+					self.draw_wiggly_curved(sing_ISC_points[j],self.states_energies[i[1]],trip_ISC_points[j],self.states_energies[i[2]],self.states_color[i[1]])
+					dx=trip_ISC_points[j] - sing_ISC_points[j] 
+					all_lbl.append((sing_ISC_points[j] + dx/2,i))
+				elif self.states_dict[i[1]][0] == '1' and self.states_dict[i[2]][0]=='5':
+					self.draw_wiggly_curved(sing_ISC_points[j],self.states_energies[i[1]],quin_ISC_points[j],self.states_energies[i[2]],self.states_color[i[1]])
+					dx=quin_ISC_points[j] - sing_ISC_points[j] 
+					all_lbl.append((sing_ISC_points[j] + dx/2,i))
+				elif self.states_dict[i[1]][0] == '3' and self.states_dict[i[2]][0] =='5':
+					self.draw_wiggly_curved(trip_ISC_points[j],self.states_energies[i[1]],quin_ISC_points[j],self.states_energies[i[2]],self.states_color[i[1]])
+					dx=quin_ISC_points[j] - trip_ISC_points[j] 
+					all_lbl.append((trip_ISC_points[j] + dx/2,i))
+				elif self.states_dict[i[1]][0] == '2' and self.states_dict[i[2]][0] =='4':
+					self.draw_wiggly_curved(doub_ISC_points[j],self.states_energies[i[1]],quad_ISC_points[j],self.states_energies[i[2]],self.states_color[i[1]])
+					dx=quad_ISC_points[j] - doub_ISC_points[j] 
+					all_lbl.append((doub_ISC_points[j] + dx/2,i))
 			elif i[0] == 'RISC': 
-				self.draw_wiggly_curved(trip_ISC_points[j],self.states_dict[i[1]],sing_ISC_points[j],self.states_dict[i[2]],self.states_color[i[1]])
-				dx=trip_ISC_points[j] - sing_ISC_points[j] 
-				all_lbl.append((sing_ISC_points[j] + dx/2,i))
+				if self.states_dict[i[1]][0] == '3' and self.states_dict[i[2]][0] == '1' :
+					self.draw_wiggly_curved(trip_ISC_points[j],self.states_energies[i[1]],sing_ISC_points[j],self.states_energies[i[2]],self.states_color[i[1]])
+					dx=trip_ISC_points[j] - sing_ISC_points[j] 
+					all_lbl.append((sing_ISC_points[j] + dx/2,i))
+				elif self.states_dict[i[1]][0] == '5' and self.states_dict[i[2]][0] == "1":
+					self.draw_wiggly_curved(quin_ISC_points[j],self.states_energies[i[1]],sing_ISC_points[j],self.states_energies[i[2]],self.states_color[i[1]])
+					dx=quin_ISC_points[j] - sing_ISC_points[j] 
+					all_lbl.append((sing_ISC_points[j] + dx/2,i))
+				elif self.states_dict[i[1]][0] == '5' and self.states_dict[i[2]][0]:
+					self.draw_wiggly_curved(quin_ISC_points[j],self.states_energies[i[1]],trip_ISC_points[j],self.states_energies[i[2]],self.states_color[i[1]])
+					dx=quin_ISC_points[j] - trip_ISC_points[j] 
+					all_lbl.append((trip_ISC_points[j] + dx/2,i))
+				elif self.states_dict[i[1]][0] == '4' and self.states_dict[i[2]][0] == "2":
+					self.draw_wiggly_curved(quad_ISC_points[j],self.states_energies[i[1]],doub_ISC_points[j],self.states_energies[i[2]],self.states_color[i[1]])
+					dx=quad_ISC_points[j] - doub_ISC_points[j] 
+					all_lbl.append((doub_ISC_points[j] + dx/2,i))
 			elif i[0] == 'PHO': 
-				self.draw_straight_arrow(trip_ISC_points[j],self.states_dict[i[1]],self.states_dict[i[2]],self.states_color[i[1]])
+				self.draw_straight_arrow(trip_ISC_points[j],self.states_energies[i[1]],self.states_energies[i[2]],self.states_color[i[1]])
 				all_lbl.append((points[j],i))
 			else:
 				pass
