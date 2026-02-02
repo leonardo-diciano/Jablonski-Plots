@@ -523,15 +523,15 @@ class MainWindow(QMainWindow):
 			text.setColor(self.states_color[j])
 			self.plot_graph.addItem(text)
 			#Set its position depending on the multiplicity
-			if any(self.states_energies.values()) + 0.05 > energy[0] and any(self.states_energies.values()) - 0.05 < energy[0]:
-				disp=0.5
+			if len(self.states_energies) > 2 and any(abs(e - energy[0]) < 0.05 for e in self.states_energies.values()):
+				disp = 0.05
 			else:
-				disp=0.0
+				disp = 0.0
 
 			if i[0]=="1" :
-				text.setPos(line[0]-0.12,energy[0]+ disp * random.randint(-1, 1))
+				text.setPos(line[0]-0.15,energy[0]+ disp * random.randint(-1, 1))
 			else:
-				text.setPos(line[1]+0.12,energy[0])
+				text.setPos(line[1]+0.15,energy[0])
 		
 	def plot_process(self):
 		"""Function that handles the plotting of process arrows and labels"""
@@ -706,9 +706,9 @@ class MainWindow(QMainWindow):
 				text.setColor(self.states_color[i[1][1]])
 			self.plot_graph.addItem(text)
 			if i[1][0] == 'ISC' or i[1][0] == 'RISC':
-				text.setPos(i[0],(self.states_dict[i[1][1]]+self.states_dict[i[1][2]])/2+np.random.rand()*(self.states_dict[i[1][2]]-self.states_dict[i[1][1]])*0.5)
+				text.setPos(i[0],(self.states_energies[i[1][1]]+self.states_energies[i[1][2]])/2+np.random.rand()*(self.states_energies[i[1][2]]-self.states_energies[i[1][1]])*0.5)
 			else:
-				text.setPos(i[0],self.gen_label_y(self.states_dict[i[1][1]],self.states_dict[i[1][2]]))
+				text.setPos(i[0],self.gen_label_y(self.states_energies[i[1][1]],self.states_energies[i[1][2]]))
 			text.setFont(font)
 		return
 
