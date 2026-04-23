@@ -13,7 +13,8 @@ from PyQt6.QtCore import Qt
 import pyqtgraph as pg
 import numpy as np
 import os
-import random
+import random 
+import pyqtgraph.exporters
 
 
 class MainWindow(QMainWindow):
@@ -43,6 +44,7 @@ class MainWindow(QMainWindow):
 		main_layout.addWidget(self.plot_graph)
 		self.plot_graph.setXRange(0,5.0)
 		self.plot_graph.setYRange(-0.001,1.5)
+		self.axis_scale=[-0.001,1.5]	
 		self.plot_graph.getPlotItem().hideAxis('bottom')
 		self.plot_graph.setLabel("left",'<span style="color: black; font-size: 24px"> Energy (eV) </span>')
 		self.plot_graph.getAxis("left").setPen(pg.mkPen(color='black',width=5))
@@ -494,7 +496,8 @@ class MainWindow(QMainWindow):
 		    key: field.text()
 			for key, field in self.axis_input_fields.items()
 		}
-		self.plot_graph.setYRange(float(axis_rescale_input_values['Ymin']),float(axis_rescale_input_values['Ymax']))			
+		self.plot_graph.setYRange(float(axis_rescale_input_values['Ymin']),float(axis_rescale_input_values['Ymax']))	
+		self.axis_scale=[float(axis_rescale_input_values['Ymin']),float(axis_rescale_input_values['Ymax'])]		
 		
 
 	def plot_states(self):
@@ -524,7 +527,7 @@ class MainWindow(QMainWindow):
 			self.plot_graph.addItem(text)
 			#Set its position depending on the multiplicity
 			if len(self.states_energies) > 2 and any(abs(e - energy[0]) < 0.05 for e in self.states_energies.values()):
-				disp = 0.05
+				disp = min(0.05,0.005*(np.abs(self.axis_scale[0]-self.axis_scale[1])))
 			else:
 				disp = 0.0
 
@@ -734,10 +737,10 @@ class MainWindow(QMainWindow):
 		filename, _ = QFileDialog.getSaveFileName( self, "Save Plot", "", "PNG Files (*.png);;JPEG Files (*.jpg);;SVG Files(*.svg);;All Files (*)")
 		if filename:
 			if filename.lower().endswith(".svg"):
-				exporter = pg.exporters.SVGExporter(self.plot_graph.plotItem)
+				exporter = pyqtgraph.exporters.SVGExporter(self.plot_graph.plotItem)
 				exporter.export(filename)
 			else:
-				exporter = pg.exporters.ImageExporter(self.plot_graph.plotItem)
+				exporter = pyqtgraph.exporters.ImageExporter(self.plot_graph.plotItem)
 				exporter.parameters()['width'] = self.plot_graph.width() * 3
 				exporter.export(filename)
 
