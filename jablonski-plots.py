@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 """Jablonski Plots - An easy way to plot publication-ready Jablonski diagrams
- developed by Leonardo Di Ciano (2025)
+ developed by Leonardo Di Ciano (2025-2026)
  GPL v3 License """
 
 import sys
@@ -18,7 +18,7 @@ import pyqtgraph.exporters
 
 
 class MainWindow(QMainWindow):
-	def __init__(self):
+	def __init__(self,inputfile=None):
 		"""Initialization of GUI and variables """
 		super().__init__()
 		self.setWindowTitle('Jablonski Plots')
@@ -181,6 +181,10 @@ class MainWindow(QMainWindow):
 
 		#Maximize the page
 		self.showMaximized()
+
+		if inputfile:
+			InputFileMode(inputfile)
+			
 	
 	
 	def add_state_function(self):
@@ -249,21 +253,23 @@ class MainWindow(QMainWindow):
 		
 		self.input_container.setVisible(True)
 	
-	def save_input_states(self):
+	def save_input_states(self,input_values = None):
 		"""Triggered by Save button; save input data and create the 
 		corresponding state row in the scroll list"""
-		input_values = {}
 		
-		#Extract data from fields
-		for  key,field in self.input_fields.items(): 
-			if isinstance(field,QLineEdit):
-				input_values[key] = field.text() 
-			elif isinstance(field, QPushButton) and hasattr(field, "color_value"):
-				input_values[key] = field.color_value
-			elif isinstance(field,QComboBox):
-				input_values[key] = field.currentText() 
-			else:
-				input_values[key] = None
+		
+		if not input_values:
+			#Extract data from fields
+			input_values = {}
+			for  key,field in self.input_fields.items(): 
+				if isinstance(field,QLineEdit):
+					input_values[key] = field.text() 
+				elif isinstance(field, QPushButton) and hasattr(field, "color_value"):
+					input_values[key] = field.color_value
+				elif isinstance(field,QComboBox):
+					input_values[key] = field.currentText() 
+				else:
+					input_values[key] = None
 	
 		#Save input data in different list and dictionaries for later use	
 		self.states_dict.update({input_values["Name"]:[input_values["Mult"],float(input_values["Energy"])]})
@@ -384,15 +390,16 @@ class MainWindow(QMainWindow):
 		
 		self.proc_input_container.setVisible(True)
 	
-	def save_input_process(self):
+	def save_input_process(self, proc_input_values=None):
 		"""Triggered by Save button; save input data and create the 
                 corresponding process row in the scroll list"""
 		#Parse input data
-		proc_input_values = {
-		    key: field.currentText() if isinstance(field,QComboBox) else field.text()
-			for key, field in self.proc_input_fields.items()
-		}
-		
+		if not proc_input_values:
+			proc_input_values = {
+				key: field.currentText() if isinstance(field,QComboBox) else field.text()
+				for key, field in self.proc_input_fields.items()
+			}
+			
 		#Update the scroll area in the GUI 	
 		container = QWidget()
 		proc_row = QHBoxLayout(container)
@@ -702,6 +709,10 @@ class MainWindow(QMainWindow):
 				if not i[1][3] == None :
 					text=pg.TextItem(html=f"<span style='font-size:24pt; background-color:white; padding:2px'>{i[1][3]}",anchor=(0.4, 0.5))	
 					text.setColor(self.states_color[i[1][2]])
+			elif i[1][3] == None or i[1][3]=' ':
+				text=pg.TextItem(html=f"<span style='font-size:24pt; background-color:white; padding:2px'>k<sup>{i[1][0]}</sup>"
+                                	f"<sub>{i[1][1]}→{i[1][2]}</sub>",anchor=(0.4, 0.5))
+				text.setColor(self.states_color[i[1][1]])
 			else:
 				text=pg.TextItem(html=f"<span style='font-size:24pt; background-color:white; padding:2px'>k<sup>{i[1][0]}</sup>"
                                 	f"<sub>{i[1][1]}→{i[1][2]}</sub>"
@@ -741,8 +752,55 @@ class MainWindow(QMainWindow):
 				exporter.export(filename)
 			else:
 				exporter = pyqtgraph.exporters.ImageExporter(self.plot_graph.plotItem)
-				exporter.parameters()['width'] = self.plot_graph.width() * 3
+				exporter.parameters()['width'] = self.plot_graph.width() * 2
 				exporter.export(filename)
+
+
+class InputFileMode(MainWindow):
+	"""Input File mode"""
+	def __init__(self,filename):
+		super().__init__()
+		with open(filename,"r+") as f:
+			self.input_contents=f.read().splitlines()
+		return
+	
+	def parse_input(self):
+		for i in self.input_contents:
+			parts=i.split()
+			if parts[0] == "#S":
+				self.parse_state(parts)
+			if parts[0] == "#P":
+				self.parse_process(parts)
+
+	def parse_state(self,inputline):
+		multiplicity=inputline[1]
+		name=inputline[2]
+		energy=inputline[3]
+		color=inputline[4]
+		
+		input_values = {'Name':name,'Mult':multiplicity,'Energy':energy,'Color':color}
+		self.save_input_states(input_values=input_values)
+		return
+	
+	def parse_process(self,inputline):
+		ptype=inputline[1]
+		if not ptype in ['FLU','IC','PHO','ISC','RISC','ABS']:
+			raise ValueError
+		state1=inputline[2]
+		state2=inputline[3]
+		if len(inputline) > 4:
+			constant=inputline[4]
+		else:
+			constant=None
+
+		proc_input_values={'Name':ptype,'State1':state1,'State2':state2,'Constant':constant}
+		self.save_input_process(proc_input_values=proc_input_values)
+
+		return
+
+	def export_to_file(self):
+		
+
 
 def main():
 	"""Main function to launch the app"""
