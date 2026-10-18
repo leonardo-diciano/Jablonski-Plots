@@ -184,6 +184,8 @@ class MainWindow(QMainWindow):
 
 		if inputfile:
 			InputFileMode(inputfile)
+			self.plot_states()
+			self.plot_process()	
 			
 	
 	
@@ -709,7 +711,7 @@ class MainWindow(QMainWindow):
 				if not i[1][3] == None :
 					text=pg.TextItem(html=f"<span style='font-size:24pt; background-color:white; padding:2px'>{i[1][3]}",anchor=(0.4, 0.5))	
 					text.setColor(self.states_color[i[1][2]])
-			elif i[1][3] == None or i[1][3]=' ':
+			elif i[1][3] == None or i[1][3]==' ':
 				text=pg.TextItem(html=f"<span style='font-size:24pt; background-color:white; padding:2px'>k<sup>{i[1][0]}</sup>"
                                 	f"<sub>{i[1][1]}→{i[1][2]}</sub>",anchor=(0.4, 0.5))
 				text.setColor(self.states_color[i[1][1]])
@@ -762,15 +764,19 @@ class InputFileMode(MainWindow):
 		super().__init__()
 		with open(filename,"r+") as f:
 			self.input_contents=f.read().splitlines()
+		
+		self.parse_input()
 		return
-	
+
 	def parse_input(self):
 		for i in self.input_contents:
 			parts=i.split()
 			if parts[0] == "#S":
 				self.parse_state(parts)
-			if parts[0] == "#P":
+			elif parts[0] == "#P":
 				self.parse_process(parts)
+			else:
+				pass
 
 	def parse_state(self,inputline):
 		multiplicity=inputline[1]
@@ -798,7 +804,7 @@ class InputFileMode(MainWindow):
 
 		return
 
-	def export_to_file(self):
+#	def export_to_file(self):
 		
 
 
@@ -806,7 +812,10 @@ def main():
 	"""Main function to launch the app"""
 	#Needed for path call
 	app = QApplication(sys.argv) 
-	window = MainWindow()
+	if sys.argv[1]:
+		window = MainWindow(inputfile=sys.argv[1])
+	else:
+		window = MainWindow()
 	icon_path = os.path.abspath("screenshots/icon.png")
 	app.setWindowIcon(QIcon(icon_path))  
 	window.setWindowIcon(QIcon(icon_path)) 
